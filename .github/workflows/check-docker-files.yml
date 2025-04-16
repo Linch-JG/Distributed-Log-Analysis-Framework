@@ -1,0 +1,22 @@
+name: Check Docker Files Location
+
+on:
+  push:
+
+jobs:
+  check-docker-files:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Find Docker files outside docker folder
+      run: |
+        if find . -type f -name 'Dockerfile*' ! -path './docker/*' | grep -q .; then
+          echo "Error: Docker files found outside the docker folder:";
+          find . -type f -name 'Dockerfile*' ! -path './docker/*';
+          exit 1;
+        else
+          echo "All Docker files are correctly located inside the docker folder.";
+        fi

@@ -1,0 +1,195 @@
+# Global
+# ------
+# OS files
+**/.DS_Store
+**/Thumbs.db
+**/ehthumbs.db
+**/Desktop.ini
+**/$RECYCLE.BIN/
+
+# Editor and IDE files
+**/.idea/
+**/.vscode/
+**/*.swp
+**/*.swo
+**/*~
+**/.project
+**/.settings/
+**/.classpath
+**/.factorypath
+**/.c9/
+**/*.launch
+**/*.sublime-workspace
+**/.history
+**/.ionide
+**/*.iml
+**/*.ipr
+**/*.iws
+**/out/
+**/.vim/
+**/nbactions.xml
+**/nb-configuration.xml
+**/.netrwhist
+**/tags
+
+# Logs
+**/logs/
+**/*.log
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/lerna-debug.log*
+
+# Environment variables and secrets
+**/.env
+**/.env.local
+**/.env.development.local
+**/.env.test.local
+**/.env.production.local
+**/.env.*.local
+**/*.env
+**/*.p8
+**/*.p12
+**/*.key
+**/*.pem
+**/*.crt
+**/*.cer
+**/*.der
+**/*.gpg
+
+# Build directories
+**/dist/
+**/build/
+**/target/
+**/bin/
+**/gen/
+**/coverage/
+**/.coverage
+**/htmlcov/
+**/.nyc_output
+**/temp/
+**/tmp/
+**/.tmp/
+
+# Java & Spring Boot
+# -----------------
+**/target/
+!**/.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# STS (Spring Tool Suite)
+**/.apt_generated
+**/.springBeans
+**/.sts4-cache
+
+# Spring Boot Tooling
+**/.gradle/
+**/gradle/
+**/gradlew
+**/gradlew.bat
+**/gradle-app.setting
+!**/gradle-wrapper.jar
+**/.gradle-properties
+
+# Compiled Java class files
+**/*.class
+
+# Package files
+**/*.jar
+**/*.war
+**/*.nar
+**/*.ear
+**/*.zip
+**/*.tar.gz
+**/*.rar
+
+# JVM crash logs
+**/hs_err_pid*
+**/replay_pid*
+
+# Golang
+# ------
+# Binaries for programs and plugins
+**/*.exe
+**/*.exe~
+**/*.dll
+**/*.so
+**/*.dylib
+
+# Go specific
+**/*.o
+**/*.a
+**/go.work
+
+# Test binary, built with `go test -c`
+**/*.test
+
+# Output of the go coverage tool
+**/*.out
+**/*.prof
+
+# Dependency directories (Golang)
+**/vendor/
+
+# ReactJS / Frontend
+# -----------------
+# Dependencies
+**/node_modules/
+**/jspm_packages/
+**/bower_components/
+
+# Cached build files
+**/.npm
+**/.eslintcache
+**/.stylelintcache
+**/.parcel-cache
+**/.cache/
+**/.webpack/
+**/.next/
+**/.nuxt/
+**/.vuepress/dist
+**/.fusebox/
+**/.dynamodb/
+**/.docusaurus
+**/.serverless/
+**/.grunt
+
+# TypeScript cache
+**/*.tsbuildinfo
+
+# Production build
+**/build/
+**/public/build/
+**/public/static/
+**/dist/
+**/out/
+**/.output/
+
+# Testing
+**/coverage/
+**/.jest-*
+
+# Optional eslint cache
+**/.eslintcache
+
+# yarn v2
+**/.yarn/cache/
+**/.yarn/unplugged/
+**/.yarn/build-state.yml
+**/.yarn/install-state.gz
+**/.pnp.*
+
+# Docker
+# ------
+**/.dockerignore
+
+# Misc
+# ----
+# Local development overrides
+**/.env.development.local
+**/override.tf
+**/override.tf.json
+**/*_override.tf
+**/*_override.tf.json
+**/docker-compose.override.yml
