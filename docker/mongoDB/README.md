@@ -32,7 +32,7 @@ Then run:
 
 ```bash
 cd docker/mongoDB
-docker-compose up -d
+docker compose up -d
 ```
 
 ## Deployment
@@ -60,7 +60,7 @@ To start MongoDB using Docker Compose:
 
 ```bash
 cd docker/mongoDB
-docker-compose up -d
+docker compose up -d
 ```
 
 ### Connecting to MongoDB
@@ -81,11 +81,11 @@ For applications, use:
 ### Stopping MongoDB
 
 ```bash
-docker-compose down
+docker compose down
 ```
 
 To completely remove volumes and data:
 
 ```bash
-docker-compose down -v
+docker compose down -v
 ``` 
