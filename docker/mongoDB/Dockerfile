@@ -1,0 +1,17 @@
+FROM mongo:latest
+
+ARG MONGO_ROOT_USERNAME
+ARG MONGO_ROOT_PASSWORD
+ARG MONGO_DATABASE
+
+ENV MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME:-admin}
+ENV MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-password}
+ENV MONGO_INITDB_DATABASE=${MONGO_DATABASE:-logs_db}
+
+RUN mkdir -p /etc/mongo
+
+COPY ./mongod.conf /etc/mongo/mongod.conf
+
+EXPOSE 27017
+
+CMD ["mongod", "--config", "/etc/mongo/mongod.conf"] 

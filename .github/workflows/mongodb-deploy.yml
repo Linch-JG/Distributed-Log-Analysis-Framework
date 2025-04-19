@@ -1,0 +1,38 @@
+name: MongoDB Docker Deployment
+
+on:
+  push:
+    paths:
+      - "docker/mongoDB/**"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build and push MongoDB image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./docker/mongoDB
+          push: false
+          build-args: |
+            MONGO_ROOT_USERNAME=${{ secrets.MONGO_ROOT_USERNAME }}
+            MONGO_ROOT_PASSWORD=${{ secrets.MONGO_ROOT_PASSWORD }}
+            MONGO_DATABASE=${{ secrets.MONGO_DATABASE }}
+          tags: mongodb:latest
+
+      - name: Deploy with Docker Compose
+        working-directory: ./docker/mongoDB
+        env:
+          MONGO_ROOT_USERNAME: ${{ secrets.MONGO_ROOT_USERNAME }}
+          MONGO_ROOT_PASSWORD: ${{ secrets.MONGO_ROOT_PASSWORD }}
+          MONGO_DATABASE: ${{ secrets.MONGO_DATABASE }}
+        run: |
+          docker-compose up -d
