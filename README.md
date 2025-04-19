@@ -46,7 +46,7 @@ Must be one of the following:
 
 The following is the current list of supported scopes (may be updated later:
 
-* **main-node**
+* **master-node**
 * **worker-node**
 * **kafka**
 * **dashboard**
