@@ -1,7 +1,8 @@
 # Distributed-Log-Analysis-Framework
-**Need project description here*
+MapReduce framework built for performing log analysis over large, distributed system logs (e.g., from web servers, application traces, IoT devices), extracting useful insights (e.g., error rates, frequent access paths, IP usage patterns).  
+System supports log splitting, distributed mapping, and result reduction.
 ## Project structure
-**Need project structure here*
+### [Figma board link](https://www.figma.com/board/4VOwMDVzaCjXlxx79GB2qE/Untitled?t=h3ijaX7ESqqBWqBm-1)
 ## Commit Message Guidelines
 ### Commit Message Format
 Each commit message consists of a **header**, a **body** and a **footer**.  The header has a special
@@ -71,4 +72,3 @@ The body should include the motivation for the change and contrast this with pre
 
 ### Revert
 If the commit reverts a previous commit, it should begin with `revert: `, followed by the header of the reverted commit. In the body it should say: `This reverts commit <hash>.`, where the hash is the SHA of the commit being reverted.
-### [Figma board link](https://www.figma.com/board/4VOwMDVzaCjXlxx79GB2qE/Untitled?t=h3ijaX7ESqqBWqBm-1)
