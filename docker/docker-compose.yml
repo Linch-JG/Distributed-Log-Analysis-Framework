@@ -7,12 +7,16 @@ services:
     ports:
       - "27018:27017"
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=admin
-      - MONGO_INITDB_DATABASE=logs_analysis_db
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME:-admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:-admin}
+      - MONGO_INITDB_DATABASE=${MONGO_DATABASE:-logs_analysis_db}
     volumes:
       - mongodb_data:/data/db
       - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backend_network
   
   rabbitmq:
     image: rabbitmq:4-management
@@ -22,10 +26,14 @@ services:
       - "5672:5672"
       - "15672:15672"
     environment:
-      - RABBITMQ_DEFAULT_USER=admin
-      - RABBITMQ_DEFAULT_PASS=admin
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-admin}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS:-admin}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backend_network
 
   mongo-express:
     image: mongo-express:latest
@@ -34,13 +42,17 @@ services:
     ports:
       - "8081:8081"
     environment:
-      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
-      - ME_CONFIG_MONGODB_ADMINPASSWORD=admin
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGO_USERNAME:-admin}
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_PASSWORD:-admin}
       - ME_CONFIG_MONGODB_SERVER=mongodb
-      - ME_CONFIG_BASICAUTH_USERNAME=admin
-      - ME_CONFIG_BASICAUTH_PASSWORD=admin
+      - ME_CONFIG_BASICAUTH_USERNAME=${MONGO_EXPRESS_USER:-admin}
+      - ME_CONFIG_BASICAUTH_PASSWORD=${MONGO_EXPRESS_PASS:-admin}
     depends_on:
       - mongodb
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backend_network
       
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -54,6 +66,8 @@ services:
     volumes:
       - zookeeper_data:/var/lib/zookeeper/data
       - zookeeper_logs:/var/lib/zookeeper/log
+    security_opt:
+      - no-new-privileges:true
     networks:
       - kafka_network
 
@@ -75,6 +89,8 @@ services:
       - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
     volumes:
       - kafka_data:/var/lib/kafka/data
+    security_opt:
+      - no-new-privileges:true
     networks:
       - kafka_network
       
@@ -90,6 +106,8 @@ services:
       - KAFKA_CLUSTERS_0_NAME=local
       - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
       - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+    security_opt:
+      - no-new-privileges:true
     networks:
       - kafka_network
 
@@ -106,5 +124,7 @@ volumes:
     driver: local
 
 networks:
+  backend_network:
+    driver: bridge
   kafka_network:
     driver: bridge 
