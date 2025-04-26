@@ -5,12 +5,17 @@
 Чтобы запустить все сервисы (MongoDB, Mongo-Express и RabbitMQ) одной командой, выполните следующую команду в терминале из папки `docker`:
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 Это запустит все контейнеры в фоновом режиме.
 
-## Проверка статуса контейнеров
+Чтобы остановить все контейнеры ипользуйте:
+
+```bash
+docker compose down -v
+```
+
 
 Чтобы проверить, что все контейнеры запущены:
 
@@ -25,16 +30,20 @@ docker ps
 - Логин: admin
 - Пароль: admin
 
+#### MongoDB container:
+- port: 27018
+- Логин: admin
+- Пароль: admin
+
 ### RabbitMQ Management UI
 - URL: http://localhost:15672
 - Логин: admin
 - Пароль: admin
 
-## Остановка всех контейнеров
+### Kafka UI
+- URL: http://localhost:8080
+- Не требует аутентификации
 
-Чтобы остановить все контейнеры:
 
-```bash
-docker-compose down
-```
+
 
