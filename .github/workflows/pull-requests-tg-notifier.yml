@@ -6,7 +6,7 @@ on:
 
 jobs:
   send-telegram-alert:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Notify team via Telegram
         uses: appleboy/telegram-action@master
