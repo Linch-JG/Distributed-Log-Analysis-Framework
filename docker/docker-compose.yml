@@ -53,7 +53,6 @@ services:
       - no-new-privileges:true
     networks:
       - backend_network
-      
 
 volumes:
   mongodb_data:

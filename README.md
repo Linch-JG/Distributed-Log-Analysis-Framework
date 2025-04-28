@@ -46,6 +46,7 @@ Must be one of the following:
 
 The following is the current list of supported scopes (may be updated later or you can use logic here):
 
+
 * **api**
 * **analyzer**
 * **servers**
