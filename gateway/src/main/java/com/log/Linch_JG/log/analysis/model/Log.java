@@ -8,7 +8,7 @@ import lombok.Data;
 
 import java.util.Date;
 
-@Document(collection = "logs")
+@Document(collection = "logs_analysis")
 @Data
 public class Log {
     @Id

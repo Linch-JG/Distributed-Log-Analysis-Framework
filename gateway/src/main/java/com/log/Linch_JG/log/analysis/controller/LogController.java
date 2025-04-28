@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,28 +30,67 @@ public class LogController {
             @RequestParam(required = false) Long to,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int pageSize) {
-        return new ResponseEntity<>(logService.getLogs(serverId, type, from, to, page, pageSize), HttpStatus.OK);
+        List<Log> logs = logService.getLogs(serverId, type, from, to, page, pageSize);
+        
+        for (Log log : logs) {
+            if (log.getTimestamp() == null) {
+                log.setTimestamp(new Date());
+            }
+        }
+        
+        return new ResponseEntity<>(logs, HttpStatus.OK);
     }
     
     @GetMapping("/{id}")
     public ResponseEntity<Log> getLogById(@PathVariable String id) {
-        Optional<Log> log = logService.getLogById(id);
-        return log.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
-                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        Optional<Log> logOptional = logService.getLogById(id);
+        
+        if (logOptional.isPresent()) {
+            Log log = logOptional.get();
+            if (log.getTimestamp() == null) {
+                log.setTimestamp(new Date());
+                log = logService.saveLog(log); 
+            }
+            return new ResponseEntity<>(log, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
     
     @PostMapping
     public ResponseEntity<Log> createLog(@RequestBody Log log) {
-        return new ResponseEntity<>(logService.saveLog(log), HttpStatus.CREATED);
+        // Always set timestamp for new logs
+        log.setTimestamp(new Date());
+        Log savedLog = logService.saveLog(log);
+        
+        if (savedLog.getTimestamp() == null) {
+            savedLog.setTimestamp(new Date());
+            savedLog = logService.saveLog(savedLog);
+        }
+        
+        return new ResponseEntity<>(savedLog, HttpStatus.CREATED);
     }
     
     @PutMapping("/{id}")
     public ResponseEntity<Log> updateLog(@PathVariable String id, @RequestBody Log log) {
-        if (!logService.getLogById(id).isPresent()) {
+        Optional<Log> existingLogOpt = logService.getLogById(id);
+        if (!existingLogOpt.isPresent()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        log.setId(id); 
-        return new ResponseEntity<>(logService.saveLog(log), HttpStatus.OK);
+        
+        Log existingLog = existingLogOpt.get();
+        log.setId(id);
+        
+        if (log.getTimestamp() == null) {
+            if (existingLog.getTimestamp() != null) {
+                log.setTimestamp(existingLog.getTimestamp());
+            } else {
+                log.setTimestamp(new Date());
+            }
+        }
+        
+        Log updatedLog = logService.saveLog(log);
+        return new ResponseEntity<>(updatedLog, HttpStatus.OK);
     }
     
     @DeleteMapping("/{id}")
