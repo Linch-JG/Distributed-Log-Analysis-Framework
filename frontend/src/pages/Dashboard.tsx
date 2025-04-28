@@ -1,0 +1,153 @@
+import { useEffect, useState } from 'react';
+import { Row, Col, Card, Statistic, Spin, Typography, Space } from 'antd';
+import { 
+  ExclamationCircleOutlined, 
+  ClockCircleOutlined, 
+  DatabaseOutlined, 
+  CloudServerOutlined 
+} from '@ant-design/icons';
+import { Pie, Line } from '@ant-design/charts';
+import { useGetLogsQuery } from '../services/LogService';
+
+const { Title } = Typography;
+
+interface LogSummary {
+  totalLogs: number;
+  errorCount: number;
+  serverCount: number;
+  logTypes: { [key: string]: number };
+  timeDistribution: { timestamp: string; count: number }[];
+}
+
+const Dashboard = () => {
+  const [summary, setSummary] = useState<LogSummary>({
+    totalLogs: 0,
+    errorCount: 0,
+    serverCount: 0,
+    logTypes: {},
+    timeDistribution: []
+  });
+
+  const { data: logs, isLoading, error } = useGetLogsQuery({});
+
+  useEffect(() => {
+    if (logs) {
+      // Calculate summary data
+      const errorCount = logs.filter(log => log.type.toLowerCase().includes('error')).length;
+      const servers = new Set(logs.map(log => log.serverId));
+      const logTypes: { [key: string]: number } = {};
+      
+      // Count log types
+      logs.forEach(log => {
+        logTypes[log.type] = (logTypes[log.type] || 0) + 1;
+      });
+      
+      // Group logs by hour for time distribution
+      const timeMap = new Map<string, number>();
+      logs.forEach(log => {
+        if (log.timestamp) {
+          const hour = new Date(log.timestamp).toISOString().split('T')[0];
+          timeMap.set(hour, (timeMap.get(hour) || 0) + 1);
+        }
+      });
+      
+      const timeDistribution = Array.from(timeMap.entries())
+        .map(([timestamp, count]) => ({ timestamp, count }))
+        .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+      
+      setSummary({
+        totalLogs: logs.length,
+        errorCount,
+        serverCount: servers.size,
+        logTypes,
+        timeDistribution
+      });
+    }
+  }, [logs]);
+
+  const pieConfig = {
+    data: Object.entries(summary.logTypes).map(([type, value]) => ({ type, value })),
+    angleField: 'value',
+    colorField: 'type',
+    radius: 0.8,
+    label: {
+      type: 'outer',
+      content: '{name}: {percentage}',
+    },
+    interactions: [{ type: 'element-active' }],
+  };
+
+  const lineConfig = {
+    data: summary.timeDistribution,
+    xField: 'timestamp',
+    yField: 'count',
+    point: {
+      size: 5,
+      shape: 'diamond',
+    },
+  };
+
+  if (isLoading) return <Spin size="large" />;
+  if (error) return <div>Error loading data</div>;
+
+  return (
+    <Space direction="vertical" size="large" style={{ width: '100%' }}>
+      <Title level={2}>Dashboard</Title>
+      
+      <Row gutter={[16, 16]}>
+        <Col span={6}>
+          <Card>
+            <Statistic
+              title="Total Logs"
+              value={summary.totalLogs}
+              prefix={<DatabaseOutlined />}
+            />
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card>
+            <Statistic
+              title="Error Logs"
+              value={summary.errorCount}
+              valueStyle={{ color: '#cf1322' }}
+              prefix={<ExclamationCircleOutlined />}
+            />
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card>
+            <Statistic
+              title="Servers"
+              value={summary.serverCount}
+              prefix={<CloudServerOutlined />}
+            />
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card>
+            <Statistic
+              title="Log Types"
+              value={Object.keys(summary.logTypes).length}
+              prefix={<ClockCircleOutlined />}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      <Row gutter={[16, 16]}>
+        <Col span={12}>
+          <Card title="Log Types Distribution">
+            <Pie {...pieConfig} />
+          </Card>
+        </Col>
+        <Col span={12}>
+          <Card title="Log Volume Over Time">
+            <Line {...lineConfig} />
+          </Card>
+        </Col>
+      </Row>
+    </Space>
+  );
+};
+
+export default Dashboard; 

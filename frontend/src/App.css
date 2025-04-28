@@ -1,0 +1,61 @@
+/* App layout styles */
+.site-layout-background {
+  background: #fff;
+}
+
+.ant-layout-header {
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.logo-text {
+  color: #fff;
+  margin: 0;
+  padding: 0 16px;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+/* Dashboard card styles */
+.dashboard-card {
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.dashboard-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Table customizations */
+.ant-table-thead > tr > th {
+  background: #f8f9fa;
+  color: #333;
+}
+
+/* Chart containers */
+.chart-container {
+  height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Form styling */
+.settings-form .ant-form-item-label {
+  font-weight: 500;
+}
+
+.filter-form {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #f9f9f9;
+  border-radius: 4px;
+}
