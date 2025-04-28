@@ -23,13 +23,13 @@ public class LogController {
     
     @GetMapping
     public ResponseEntity<List<Log>> getAllLogs(
-            @RequestParam(required = false) String server_id,
+            @RequestParam(required = false) String serverId,
             @RequestParam(required = false) String type,
             @RequestParam(required = false) Long from,
             @RequestParam(required = false) Long to,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int pageSize) {
-        return new ResponseEntity<>(logService.getLogs(server_id, type, from, to, page, pageSize), HttpStatus.OK);
+        return new ResponseEntity<>(logService.getLogs(serverId, type, from, to, page, pageSize), HttpStatus.OK);
     }
     
     @GetMapping("/{id}")

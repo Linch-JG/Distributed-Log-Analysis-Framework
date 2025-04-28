@@ -2,6 +2,7 @@ package com.log.Linch_JG.log.analysis.model;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import lombok.Data;
 
@@ -12,6 +13,7 @@ import java.util.Date;
 public class Log {
     @Id
     private String id;
+    @Field("server_id")
     private String serverId;
     private String type;
     private String value;
