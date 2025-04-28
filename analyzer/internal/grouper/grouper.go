@@ -1,6 +1,6 @@
 package grouper
 
-import "github.com/Linch-JG/Distributed-Log-Analysis-Framework/internal/models"
+import "github.com/Linch-JG/Distributed-Log-Analysis-Framework/analyzer/internal/models"
 
 func GroupByKey(batch []models.MapOutput) map[models.MapKey][]models.MapOutput {
 	grouped := make(map[models.MapKey][]models.MapOutput)

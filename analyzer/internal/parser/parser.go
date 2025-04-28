@@ -2,7 +2,7 @@ package parser
 
 import (
 	"fmt"
-	"github.com/Linch-JG/Distributed-Log-Analysis-Framework/internal/models"
+	"github.com/Linch-JG/Distributed-Log-Analysis-Framework/analyzer/internal/models"
 	"regexp"
 	"strconv"
 	"time"

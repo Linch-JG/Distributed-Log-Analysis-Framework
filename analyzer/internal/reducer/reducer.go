@@ -1,6 +1,6 @@
 package reducer
 
-import "github.com/Linch-JG/Distributed-Log-Analysis-Framework/internal/models"
+import "github.com/Linch-JG/Distributed-Log-Analysis-Framework/analyzer/internal/models"
 
 func ReduceGroup(key models.MapKey, group []models.MapOutput) models.ReduceOutput {
 	count := 0
