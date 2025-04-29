@@ -1,0 +1,27 @@
+services:
+  analyzer:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.analyzer
+    container_name: analyzer
+    restart: unless-stopped
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-admin}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASS:-admin}
+      - RABBITMQ_QUEUE=logs
+      - MONGO_URI=mongodb://${MONGO_USERNAME:-admin}:${MONGO_PASSWORD:-admin}@mongodb:27017/${MONGO_DATABASE:-logs_analysis_db}?authSource=admin
+      - MONGO_DATABASE=${MONGO_DATABASE:-logs_analysis_db}
+      - MONGO_COLLECTION=aggregated_logs
+    depends_on:
+      - mongodb
+      - rabbitmq
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backend_network
+
+networks:
+  backend_network:
+    driver: bridge
