@@ -60,6 +60,17 @@ services:
       - backend_network
       - frontend_network
   
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    container_name: frontend
+    restart: unless-stopped
+    ports:
+      - "4173:4173"
+    networks:
+      - frontend_network
+  
   rabbitmq:
     image: rabbitmq:4-management
     container_name: rabbitmq
@@ -95,21 +106,6 @@ services:
       - no-new-privileges:true
     networks:
       - backend_network
-
-  frontend:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.frontend
-    container_name: frontend
-    restart: unless-stopped
-    ports:
-      - "80:80"
-    depends_on:
-      - gateway
-    networks:
-      - frontend_network
-    security_opt:
-      - no-new-privileges:true
 
 volumes:
   mongodb_data:
