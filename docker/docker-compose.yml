@@ -96,6 +96,21 @@ services:
     networks:
       - backend_network
 
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    container_name: frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - gateway
+    networks:
+      - frontend_network
+    security_opt:
+      - no-new-privileges:true
+
 volumes:
   mongodb_data:
     driver: local
