@@ -10,14 +10,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// Client represents MongoDB client
 type Client struct {
 	client     *mongo.Client
 	database   *mongo.Database
 	collection *mongo.Collection
 }
 
-// NewClient creates new MongoDB client
 func NewClient(uri, dbName, collectionName string) (*Client, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -27,7 +25,6 @@ func NewClient(uri, dbName, collectionName string) (*Client, error) {
 		return nil, err
 	}
 
-	// Check the connection
 	err = client.Ping(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -43,14 +40,10 @@ func NewClient(uri, dbName, collectionName string) (*Client, error) {
 	}, nil
 }
 
-// Close disconnects from MongoDB
 func (c *Client) Close(ctx context.Context) error {
 	return c.client.Disconnect(ctx)
 }
 
-// StoreReduceOutputs stores the reduce outputs in MongoDB
-// If an entry with the same serverID, type, and value exists, 
-// it updates the count; otherwise, it inserts a new document
 func (c *Client) StoreReduceOutputs(ctx context.Context, outputs []models.ReduceOutput) error {
 	if len(outputs) == 0 {
 		return nil
@@ -65,7 +58,6 @@ func (c *Client) StoreReduceOutputs(ctx context.Context, outputs []models.Reduce
 			"value":     output.Value,
 		}
 
-		// Using bson.D to preserve field order: server_id, type, value, count
 		update := bson.M{
 			"$set": bson.D{
 				{Key: "server_id", Value: output.ServerID},
@@ -88,19 +80,16 @@ func (c *Client) StoreReduceOutputs(ctx context.Context, outputs []models.Reduce
 	return err
 }
 
-// GetTopIPs returns top N IPs by request count
 func (c *Client) GetTopIPs(ctx context.Context, limit int) ([]models.ReduceOutput, error) {
 	filter := bson.M{"type": models.AggregationIP}
 	return c.getTopByFilter(ctx, filter, limit)
 }
 
-// GetTopEndpoints returns top N endpoints by request count
 func (c *Client) GetTopEndpoints(ctx context.Context, limit int) ([]models.ReduceOutput, error) {
 	filter := bson.M{"type": models.AggregationEndpoint}
 	return c.getTopByFilter(ctx, filter, limit)
 }
 
-// getTopByFilter is a helper function to get top N entries by count for a given filter
 func (c *Client) getTopByFilter(ctx context.Context, filter bson.M, limit int) ([]models.ReduceOutput, error) {
 	opts := options.Find().
 		SetSort(bson.M{"count": -1}).
