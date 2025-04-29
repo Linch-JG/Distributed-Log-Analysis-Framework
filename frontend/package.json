@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@ant-design/charts": "^2.2.7",
+    "@ant-design/v5-patch-for-react-19": "^1.0.3",
     "@reduxjs/toolkit": "^2.7.0",
     "@types/react-redux": "^7.1.34",
     "antd": "^5.24.8",

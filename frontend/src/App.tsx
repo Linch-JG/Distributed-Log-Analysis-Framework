@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { App as AntApp } from 'antd';
 import AppLayout from './components/Layout/AppLayout';
 import Dashboard from './pages/Dashboard';
 import Logs from './pages/Logs';
@@ -8,6 +9,7 @@ import RedirectToDefault from './components/RedirectToDefault';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { useAppSelector } from './hooks/redux';
 import './App.css';
+import '@ant-design/v5-patch-for-react-19';
 
 function App() {
   const defaultView = useAppSelector(state => state.settings.defaultView);
@@ -28,20 +30,22 @@ function App() {
   };
 
   return (
-    <ThemeProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<AppLayout />}>
-            <Route index element={<RedirectToDefault />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="logs" element={<Logs />} />
-            <Route path="analysis" element={<Analysis />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="*" element={<Navigate to={getDefaultRoute()} replace />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </ThemeProvider>
+    <AntApp>
+      <ThemeProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<AppLayout />}>
+              <Route index element={<RedirectToDefault />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="logs" element={<Logs />} />
+              <Route path="analysis" element={<Analysis />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="*" element={<Navigate to={getDefaultRoute()} replace />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </ThemeProvider>
+    </AntApp>
   );
 }
 

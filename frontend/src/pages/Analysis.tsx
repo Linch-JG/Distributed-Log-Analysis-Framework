@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Card, 
   Typography, 
@@ -16,6 +16,7 @@ import {
 import { Column, Bar, Heatmap, DualAxes } from '@ant-design/charts';
 import { ILog } from '../models/ILog';
 import { useGetLogsQuery } from '../services/LogService';
+import { useAppSelector } from '../hooks/redux';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -35,8 +36,18 @@ const Analysis = () => {
     chartType: 'column'
   });
 
-  const { data: logs, isLoading, error } = useGetLogsQuery({});
+  const { refreshInterval } = useAppSelector(state => state.settings);
+  const { data: logs, isLoading, error, refetch } = useGetLogsQuery({});
   const [form] = Form.useForm();
+
+  // Auto-refresh based on settings interval
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      refetch();
+    }, refreshInterval * 1000);
+    
+    return () => clearInterval(intervalId);
+  }, [refreshInterval, refetch]);
 
   if (isLoading) return <Spin size="large" />;
   if (error) return <Alert type="error" message="Failed to load data" />;

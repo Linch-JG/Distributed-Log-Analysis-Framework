@@ -8,6 +8,7 @@ import {
 } from '@ant-design/icons';
 import { Pie, Line } from '@ant-design/charts';
 import { useGetLogsQuery } from '../services/LogService';
+import { useAppSelector } from '../hooks/redux';
 
 const { Title } = Typography;
 
@@ -28,7 +29,17 @@ const Dashboard = () => {
     timeDistribution: []
   });
 
-  const { data: logs, isLoading, error } = useGetLogsQuery({});
+  const { refreshInterval } = useAppSelector(state => state.settings);
+  const { data: logs, isLoading, error, refetch } = useGetLogsQuery({});
+
+  // Auto-refresh based on settings interval
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      refetch();
+    }, refreshInterval * 1000);
+    
+    return () => clearInterval(intervalId);
+  }, [refreshInterval, refetch]);
 
   useEffect(() => {
     if (logs) {

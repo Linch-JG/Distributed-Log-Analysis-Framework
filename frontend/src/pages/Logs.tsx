@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Table, 
   Space, 
@@ -20,6 +20,7 @@ import {
 } from '@ant-design/icons';
 import { useGetLogsQuery, useDeleteLogMutation } from '../services/LogService';
 import { ILog, LogQueryParams } from '../models/ILog';
+import { useAppSelector } from '../hooks/redux';
 import dayjs from 'dayjs';
 
 const { Title } = Typography;
@@ -39,9 +40,18 @@ const Logs = () => {
     pageSize: 10
   });
 
+  const { refreshInterval } = useAppSelector(state => state.settings);
   const { data, isLoading, refetch } = useGetLogsQuery(queryParams);
   const [deleteLog] = useDeleteLogMutation();
   
+  // Auto-refresh based on settings interval
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      refetch();
+    }, refreshInterval * 1000);
+    
+    return () => clearInterval(intervalId);
+  }, [refreshInterval, refetch, queryParams]);
 
   let logs: ILog[] = [];
   let totalCount = 0;

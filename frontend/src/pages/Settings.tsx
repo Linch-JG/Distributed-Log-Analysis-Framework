@@ -9,7 +9,7 @@ import {
   Select, 
   InputNumber,
   Divider,
-  message
+  App
 } from 'antd';
 import { SaveOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useTheme } from '../contexts/ThemeContext';
@@ -27,6 +27,7 @@ const Settings = () => {
   const [form] = Form.useForm<SettingsForm>();
   const [loading, setLoading] = useState(false);
   const { isDarkMode, toggleTheme } = useTheme();
+  const { message } = App.useApp();
   
   const dispatch = useAppDispatch();
   const settings = useAppSelector(state => state.settings);
@@ -36,7 +37,6 @@ const Settings = () => {
     form.setFieldsValue(settings);
   }, [form, settings]);
   
-  // Update form when dark mode changes
   useEffect(() => {
     form.setFieldValue('darkMode', isDarkMode);
   }, [isDarkMode, form]);
@@ -44,12 +44,10 @@ const Settings = () => {
   const handleSaveSettings = (values: SettingsForm) => {
     setLoading(true);
     
-    // Update theme if it was changed
     if (values.darkMode !== isDarkMode) {
       toggleTheme();
     }
     
-    // Save settings to Redux
     dispatch(updateSettings(values));
     message.success('Settings saved successfully');
     setLoading(false);
@@ -84,6 +82,10 @@ const Settings = () => {
             <InputNumber min={5} max={300} style={{ width: 200 }} />
           </Form.Item>
           
+          <Divider />
+          
+          <Title level={4}>Interface Settings</Title>
+          
           <Form.Item
             name="defaultView"
             label="Default View"
@@ -94,23 +96,7 @@ const Settings = () => {
               <Option value="analysis">Analysis</Option>
             </Select>
           </Form.Item>
-          
-          <Divider />
-          
-          <Title level={4}>Log Management</Title>
-          
-          <Form.Item
-            name="logRetentionDays"
-            label="Log Retention Period (days)"
-            rules={[{ required: true, message: 'Please enter log retention period' }]}
-          >
-            <InputNumber min={1} max={365} style={{ width: 200 }} />
-          </Form.Item>
-          
-          <Divider />
-          
-          <Title level={4}>Interface Settings</Title>
-          
+
           <Form.Item
             name="darkMode"
             label="Dark Mode"
@@ -118,6 +104,7 @@ const Settings = () => {
           >
             <Switch />
           </Form.Item>
+          
           
           <Divider />
           

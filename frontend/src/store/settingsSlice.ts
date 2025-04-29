@@ -3,14 +3,12 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 export interface SettingsState {
   refreshInterval: number;
   darkMode: boolean;
-  logRetentionDays: number;
   defaultView: string;
 }
 
 const initialState: SettingsState = {
   refreshInterval: 30,
   darkMode: false,
-  logRetentionDays: 30,
   defaultView: 'dashboard'
 };
 
