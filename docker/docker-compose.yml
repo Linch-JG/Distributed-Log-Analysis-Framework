@@ -18,6 +18,29 @@ services:
     networks:
       - backend_network
   
+  # Gateway Service
+  gateway:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.gateway
+    container_name: gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATA_MONGODB_HOST=mongodb
+      - SPRING_DATA_MONGODB_PORT=27017
+      - SPRING_DATA_MONGODB_DATABASE=${MONGO_DATABASE:-logs_analysis_db}
+      - SPRING_DATA_MONGODB_USERNAME=${MONGO_USERNAME:-admin}
+      - SPRING_DATA_MONGODB_PASSWORD=${MONGO_PASSWORD:-admin}
+      - SPRING_DATA_MONGODB_AUTHENTICATION_DATABASE=admin
+    depends_on:
+      - mongodb
+      - rabbitmq
+    networks:
+      - backend_network
+      - frontend_network
+  
   rabbitmq:
     image: rabbitmq:4-management
     container_name: rabbitmq
@@ -62,4 +85,6 @@ volumes:
 
 networks:
   backend_network:
+    driver: bridge
+  frontend_network:
     driver: bridge
