@@ -35,6 +35,8 @@ services:
     depends_on:
       - mongodb
       - rabbitmq
+    networks:
+      - backend_network
 
   gateway:
     build:
