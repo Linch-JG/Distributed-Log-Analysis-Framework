@@ -112,6 +112,17 @@ services:
     networks:
       - backend_network
   
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    container_name: frontend
+    restart: unless-stopped
+    ports:
+      - "4173:4173"
+    networks:
+      - frontend_network
+  
   rabbitmq:
     image: rabbitmq:4-management
     container_name: rabbitmq
