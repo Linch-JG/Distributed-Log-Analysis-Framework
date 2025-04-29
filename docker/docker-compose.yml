@@ -9,6 +9,12 @@ services:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME:-admin}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:-admin}
       - MONGO_INITDB_DATABASE=${MONGO_DATABASE:-logs_analysis_db}
+    healthcheck:
+      test: mongosh --quiet --eval "db.adminCommand('ping').ok" localhost:27017/test --username $${MONGO_INITDB_ROOT_USERNAME} --password $${MONGO_INITDB_ROOT_PASSWORD} --authenticationDatabase admin
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     volumes:
       - mongodb_data:/data/db
       - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
@@ -32,9 +38,17 @@ services:
       - MONGO_URI=mongodb://${MONGO_USERNAME:-admin}:${MONGO_PASSWORD:-admin}@mongodb:27017/${MONGO_DATABASE:-logs_analysis_db}?authSource=admin
       - MONGO_DATABASE=${MONGO_DATABASE:-logs_analysis_db}
       - MONGO_COLLECTION=logs_analysis
+    healthcheck:
+      test: ["CMD", "echo", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     depends_on:
-      - mongodb
-      - rabbitmq
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - backend_network
 
@@ -53,12 +67,50 @@ services:
       - SPRING_DATA_MONGODB_USERNAME=${MONGO_USERNAME:-admin}
       - SPRING_DATA_MONGODB_PASSWORD=${MONGO_PASSWORD:-admin}
       - SPRING_DATA_MONGODB_AUTHENTICATION_DATABASE=admin
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     depends_on:
-      - mongodb
-      - rabbitmq
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - backend_network
       - frontend_network
+    
+  test-servers:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.test-servers
+    container_name: test-servers
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-admin}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASS:-admin}
+      - RABBITMQ_QUEUE=logs
+      - LOG_INTERVAL=0.001
+      - BATCH_SIZE=50
+      - NUM_THREADS=4
+      - SERVER_PORT=8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/metrics"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - backend_network
   
   rabbitmq:
     image: rabbitmq:4-management
@@ -70,10 +122,55 @@ services:
     environment:
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-admin}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS:-admin}
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     security_opt:
       - no-new-privileges:true
+    networks:
+      - backend_network
+  
+  consistency-validator:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.consistency-validator
+    container_name: consistency-validator
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    environment:
+      - MONGO_URI=mongodb://${MONGO_USERNAME:-admin}:${MONGO_PASSWORD:-admin}@mongodb:27017/${MONGO_DATABASE:-logs_analysis_db}?authSource=admin
+      - MONGO_DATABASE=${MONGO_DATABASE:-logs_analysis_db}
+      - MONGO_COLLECTION=logs_analysis
+      - CHECK_INTERVAL=30
+      - PYTHON_SERVER_METRICS_URL=http://test-servers:8000/metrics
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-admin}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASS:-admin}
+      - RABBITMQ_QUEUE=logs
+      - METRICS_PORT=8090
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/metrics"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    volumes:
+      - consistency_metrics:/metrics
+    depends_on:
+      test-servers:
+        condition: service_healthy
+      analyzer:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - backend_network
 
@@ -90,16 +187,70 @@ services:
       - ME_CONFIG_BASICAUTH_USERNAME=${MONGO_EXPRESS_USER:-admin}
       - ME_CONFIG_BASICAUTH_PASSWORD=${MONGO_EXPRESS_PASS:-admin}
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     security_opt:
       - no-new-privileges:true
     networks:
       - backend_network
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../test-servers/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    depends_on:
+      test-servers:
+        condition: service_healthy
+      consistency-validator:
+        condition: service_healthy
+    networks:
+      - backend_network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../test-servers/grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    depends_on:
+      - prometheus
+    networks:
+      - backend_network
+  
 volumes:
   mongodb_data:
     driver: local
   rabbitmq_data:
+    driver: local
+  consistency_metrics:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
     driver: local
 
 networks:
