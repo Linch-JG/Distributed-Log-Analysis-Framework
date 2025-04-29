@@ -25,7 +25,7 @@ docker ps
 
 ## Доступ к веб-интерфейсам
 
-### Mongo-Express (MongoDB Web UI)
+### Mongo-Express (MongoDB Web UI, might take some time to boot)
 - URL: http://localhost:8081
 - Логин: admin
 - Пароль: admin
@@ -40,10 +40,9 @@ docker ps
 - Логин: admin
 - Пароль: admin
 
-### Kafka UI
-- URL: http://localhost:8080
-- Не требует аутентификации
+## Storing login/password in .env
 
+See ```.env.example ```
 
 
 
