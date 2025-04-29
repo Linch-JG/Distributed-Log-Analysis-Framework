@@ -105,7 +105,7 @@
             },
             "editorMode": "code",
             "exemplar": false,
-            "expr": "max(logs_generated_total{job=\"python-server\"})",
+            "expr": "max(logs_generated_total{job=\"test-servers\"})",
             "instant": false,
             "interval": "",
             "legendFormat": "Generated",
