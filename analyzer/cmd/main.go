@@ -49,13 +49,13 @@ func main() {
 	rabbitMQUser := getEnv("RABBITMQ_USER", "guest")
 	rabbitMQPassword := getEnv("RABBITMQ_PASSWORD", "guest")
 	rabbitMQQueue := getEnv("RABBITMQ_QUEUE", "logs")
-	
+
 	mongoURI := getEnv("MONGO_URI", "mongodb://localhost:27017")
-	mongoDBName := getEnv("MONGO_DATABASE", "logs_analytics")
-	mongoCollection := getEnv("MONGO_COLLECTION", "aggregated_logs")
-	
+	mongoDBName := getEnv("MONGO_DATABASE", "logs_analysis_db")
+	mongoCollection := getEnv("MONGO_COLLECTION", "logs_analysis")
+
 	// Build RabbitMQ connection URI
-	rabbitMQURI := fmt.Sprintf("amqp://%s:%s@%s:%s/", 
+	rabbitMQURI := fmt.Sprintf("amqp://%s:%s@%s:%s/",
 		rabbitMQUser, rabbitMQPassword, rabbitMQHost, rabbitMQPort)
 
 	log.Printf("RabbitMQ URI: %s", rabbitMQURI)
@@ -138,7 +138,7 @@ func main() {
 			// Process the message
 			logLine := string(msg.Body)
 			log.Printf("Received message: %s", logLine)
-			
+
 			// For simplicity, using a constant server ID, but in real world application
 			// this could be extracted from the message properties or headers
 			serverID := "server1"

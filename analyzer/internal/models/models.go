@@ -24,9 +24,9 @@ const (
 // MapOutput - result of the Map
 type MapOutput struct {
 	ServerID string          `json:"server_id" bson:"server_id"`
-	Type     AggregationType `json:"type" bson:"type"`   // ip or endpoint
-	Value    string          `json:"value" bson:"value"` // specific IP or endpoint
-	Count    int             `json:"count" bson:"count"` // always 1 at the map stage
+	Type     AggregationType `json:"type" bson:"type"`
+	Value    string          `json:"value" bson:"value"`
+	Count    int             `json:"count" bson:"count"`
 }
 
 // MapKey - key for grouping map outputs
@@ -38,8 +38,10 @@ type MapKey struct {
 
 // ReduceOutput - aggregation result
 type ReduceOutput struct {
-	ServerID string          `json:"server_id" bson:"server_id"`
-	Type     AggregationType `json:"type" bson:"type"`
-	Value    string          `json:"value" bson:"value"`
-	Count    int             `json:"count" bson:"count"`
+	CreatedAt time.Time       `json:"created_at" bson:"created_at"`
+	ServerID  string          `json:"server_id" bson:"server_id"`
+	Type      AggregationType `json:"type" bson:"type"`
+	Value     string          `json:"value" bson:"value"`
+	Count     int             `json:"count" bson:"count"`
+	UpdatedAt time.Time       `json:"updated_at" bson:"updated_at"`
 }

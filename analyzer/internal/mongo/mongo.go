@@ -33,8 +33,8 @@ func NewClient(uri, dbName, collectionName string) (*Client, error) {
 		return nil, err
 	}
 
-	database := client.Database(dbName)
-	collection := database.Collection(collectionName)
+	database := client.Database("logs_analysis_db")
+	collection := database.Collection("logs_analysis")
 
 	return &Client{
 		client:     client,
@@ -49,30 +49,37 @@ func (c *Client) Close(ctx context.Context) error {
 }
 
 // StoreReduceOutputs stores the reduce outputs in MongoDB
-// If an entry with the same serverID, type, and value exists, 
-// it updates the count; otherwise, it inserts a new document
+// If an entry with the same serverID, type, and value exists,
+// it updates the count and updated_at; otherwise, it inserts a new document with created_at and updated_at
 func (c *Client) StoreReduceOutputs(ctx context.Context, outputs []models.ReduceOutput) error {
 	if len(outputs) == 0 {
 		return nil
 	}
 
 	operations := make([]mongo.WriteModel, 0, len(outputs))
+	now := time.Now()
 
 	for _, output := range outputs {
+		// Set timestamp fields
+		output.UpdatedAt = now
+
 		filter := bson.M{
 			"server_id": output.ServerID,
 			"type":      output.Type,
 			"value":     output.Value,
 		}
 
-		// Using bson.D to preserve field order: server_id, type, value, count
+		// For upserts, we need to handle created_at specially
 		update := bson.M{
 			"$set": bson.D{
 				{Key: "server_id", Value: output.ServerID},
 				{Key: "type", Value: output.Type},
 				{Key: "value", Value: output.Value},
+				{Key: "updated_at", Value: now},
 			},
 			"$inc": bson.M{"count": output.Count},
+			// $setOnInsert ensures created_at is only set when document is created
+			"$setOnInsert": bson.M{"created_at": now},
 		}
 
 		operation := mongo.NewUpdateOneModel().
