@@ -5,22 +5,22 @@ import { API_BASE_URL } from '../constants/constants';
 
 export const logAPI = createApi({
     reducerPath: 'logAPI',
-    baseQuery: fetchBaseQuery({ baseUrl: `${API_BASE_URL}/logs` }),
+    baseQuery: fetchBaseQuery({ baseUrl: API_BASE_URL }),
     endpoints: (builder) => ({
         getLogs: builder.query<ILog[], LogQueryParams>({
             query: (params) => ({
-                url: '',
+                url: '/logs',
                 params,
             }),
         }),
         
         getLogById: builder.query<ILog, string>({
-            query: (id) => `/${id}`,
+            query: (id) => `/logs/${id}`,
         }),
         
         addLog: builder.mutation<ILog, Partial<ILog>>({
             query: (log) => ({
-                url: '',
+                url: '/logs',
                 method: 'POST',
                 body: log,
             }),
@@ -28,7 +28,7 @@ export const logAPI = createApi({
         
         updateLog: builder.mutation<ILog, { id: string; log: Partial<ILog> }>({
             query: ({ id, log }) => ({
-                url: `/${id}`,
+                url: `/logs/${id}`,
                 method: 'PUT',
                 body: log,
             }),
@@ -36,7 +36,7 @@ export const logAPI = createApi({
         
         deleteLog: builder.mutation<void, string>({
             query: (id) => ({
-                url: `/${id}`,
+                url: `/logs/${id}`,
                 method: 'DELETE',
             }),
         }),
