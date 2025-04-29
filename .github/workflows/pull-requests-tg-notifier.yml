@@ -6,7 +6,7 @@ on:
 
 jobs:
   send-telegram-alert:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Notify team via Telegram
         uses: appleboy/telegram-action@master
@@ -25,3 +25,4 @@ jobs:
 
             🔗 [View PR #${{ github.event.pull_request.number }}](${{ github.event.pull_request.html_url }})
             🕒 `${{ github.event.pull_request.created_at }}`
+

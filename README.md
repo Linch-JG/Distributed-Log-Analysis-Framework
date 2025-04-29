@@ -46,8 +46,10 @@ Must be one of the following:
 
 The following is the current list of supported scopes (may be updated later or you can use logic here):
 
-* **master-node**
-* **worker-node**
+
+* **api**
+* **analyzer**
+* **servers**
 * **dashboard**
 * **db**
 * **traefik**

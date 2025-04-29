@@ -1,0 +1,26 @@
+FROM maven:3.8-openjdk-11-slim as build
+
+WORKDIR /app
+
+COPY gateway/pom.xml .
+COPY gateway/src src
+
+RUN mvn dependency:go-offline -B
+RUN mvn package -DskipTests
+
+FROM openjdk:11-jre-slim
+
+WORKDIR /app
+
+COPY --from=build /app/target/*.jar app.jar
+
+ENV SPRING_DATA_MONGODB_HOST=mongodb
+ENV SPRING_DATA_MONGODB_PORT=27017
+ENV SPRING_DATA_MONGODB_DATABASE=logs_analysis_db
+ENV SPRING_DATA_MONGODB_USERNAME=admin
+ENV SPRING_DATA_MONGODB_PASSWORD=admin
+ENV SPRING_DATA_MONGODB_AUTHENTICATION_DATABASE=admin
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", "-jar", "app.jar"] 
