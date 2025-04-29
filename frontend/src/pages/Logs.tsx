@@ -26,6 +26,12 @@ const { Title } = Typography;
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
+
+interface LogsResponse {
+  data: ILog[];
+  totalCount: number;
+}
+
 const Logs = () => {
   const [form] = Form.useForm();
   const [queryParams, setQueryParams] = useState<LogQueryParams>({
@@ -33,8 +39,23 @@ const Logs = () => {
     pageSize: 10
   });
 
-  const { data: logs, isLoading, refetch } = useGetLogsQuery(queryParams);
+  const { data, isLoading, refetch } = useGetLogsQuery(queryParams);
   const [deleteLog] = useDeleteLogMutation();
+  
+
+  let logs: ILog[] = [];
+  let totalCount = 0;
+  
+  if (data) {
+    if (Array.isArray(data)) {
+      logs = data;
+      totalCount = data.length;
+    } else if (typeof data === 'object' && 'data' in data && 'totalCount' in data) {
+      // Handle paginated response object
+      logs = (data as LogsResponse).data;
+      totalCount = (data as LogsResponse).totalCount;
+    }
+  }
 
   const handleDelete = async (id: string) => {
     try {
@@ -94,6 +115,12 @@ const Logs = () => {
           color = 'red';
         } else if (type.toLowerCase().includes('warn')) {
           color = 'orange';
+        } else if (type.toLowerCase().includes('critical')) {
+          color = 'purple';
+        } else if (type.toLowerCase().includes('security')) {
+          color = 'magenta';
+        } else if (type.toLowerCase().includes('audit')) {
+          color = 'cyan';
         } else if (type.toLowerCase().includes('info')) {
           color = 'blue';
         }
@@ -153,9 +180,13 @@ const Logs = () => {
           <Form.Item name="type">
             <Select placeholder="Log Type" style={{ width: 150 }} allowClear>
               <Option value="error">Error</Option>
-              <Option value="warn">Warning</Option>
+              <Option value="warning">Warning</Option>
               <Option value="info">Info</Option>
               <Option value="debug">Debug</Option>
+              <Option value="critical">Critical</Option>
+              <Option value="security">Security</Option>
+              <Option value="audit">Audit</Option>
+              <Option value="performance">Performance</Option>
             </Select>
           </Form.Item>
           
@@ -177,15 +208,23 @@ const Logs = () => {
         </Form>
       </Card>
       
+      {logs.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <Typography.Text type="secondary">
+            Showing {logs.length} of {totalCount} records
+          </Typography.Text>
+        </div>
+      )}
+      
       <Table 
         columns={columns} 
-        dataSource={logs || []} 
+        dataSource={logs} 
         rowKey="id"
         loading={isLoading}
         pagination={{
           current: queryParams.page,
           pageSize: queryParams.pageSize,
-          total: logs?.length || 0,
+          total: totalCount,
           onChange: (page) => setQueryParams({ ...queryParams, page })
         }}
       />
@@ -193,4 +232,4 @@ const Logs = () => {
   );
 };
 
-export default Logs; 
+export default Logs;

@@ -1,7 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { ILog, LogQueryParams } from '../models/ILog';
+import { API_BASE_URL } from '../constants/constants';
 
-const API_BASE_URL = import.meta.env.VITE_BASE_API_URL || 'http://localhost:8080/api';
 
 export const logAPI = createApi({
     reducerPath: 'logAPI',
