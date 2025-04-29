@@ -13,7 +13,7 @@ import {
   Row,
   Col
 } from 'antd';
-import { Column, Bar, Heatmap, DualAxes } from '@ant-design/charts';
+import { Column, Bar, Heatmap } from '@ant-design/charts';
 import { ILog } from '../models/ILog';
 import { useGetLogsQuery } from '../services/LogService';
 import { useAppSelector } from '../hooks/redux';
@@ -21,7 +21,7 @@ import { useAppSelector } from '../hooks/redux';
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-type ChartType = 'bar' | 'column' | 'heatmap' | 'dualAxes';
+type ChartType = 'bar' | 'column' | 'heatmap';
 
 interface AnalysisParams {
   field: keyof ILog;
@@ -156,26 +156,6 @@ const Analysis = () => {
           />
         );
       
-      case 'dualAxes':
-        // Transform for dual axes
-        const dualData = data.map(item => ({
-          group: item.group,
-          count: (item as any).count || 0,
-          value: typeof (item as any).value === 'string' ? (item as any).value.length : 0
-        }));
-        
-        return (
-          <DualAxes 
-            data={[dualData, dualData]}
-            xField="group"
-            yField={['count', 'value']}
-            geometryOptions={[
-              { geometry: 'column' },
-              { geometry: 'line', lineStyle: { lineWidth: 2 } }
-            ]}
-          />
-        );
-      
       default:
         return <Alert message="Please select a chart type" type="warning" />;
     }
@@ -236,7 +216,6 @@ const Analysis = () => {
               <Radio.Button value="column">Column</Radio.Button>
               <Radio.Button value="bar">Bar</Radio.Button>
               <Radio.Button value="heatmap">Heatmap</Radio.Button>
-              <Radio.Button value="dualAxes">Dual Axes</Radio.Button>
             </Radio.Group>
           </Form.Item>
         </Form>
