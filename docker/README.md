@@ -5,7 +5,7 @@
 Чтобы запустить все сервисы (MongoDB, Mongo-Express и RabbitMQ) одной командой, выполните следующую команду в терминале из папки `docker`:
 
 ```bash
-docker compose up -d
+docker-compose up -d --build
 ```
 
 Это запустит все контейнеры в фоновом режиме.
@@ -39,6 +39,9 @@ docker ps
 - URL: http://localhost:15672
 - Логин: admin
 - Пароль: admin
+
+### Frontend Web UI
+- URL: http://localhost:4173
 
 ## Storing login/password in .env
 
