@@ -1,134 +1,25 @@
-# Log Analysis API Gateway
-
-The API Gateway serves as the central entry point for the Distributed Log Analysis Framework, providing RESTful endpoints for log management and analytics.
+# Log Analysis Gateway
 
 ## Overview
 
-This Spring Boot application acts as an interface between clients and the log analysis backend, providing:
-
-- Log data management (CRUD operations)
-- Aggregation and analytics endpoints
-- Swagger documentation
+This gateway, based on Spring Boot, introduce a RESTful API that simplifies complexities under
+the hood, making it easier to work with logs stored in MongoDB after MapReduce processing.
 
 ## Architecture
 
-The API Gateway is part of a larger distributed system:
-
-```
-Client Applications → API Gateway → MongoDB
-                                 ↘ RabbitMQ → Log Analyzer
-```
-
-- **API Gateway**: Spring Boot REST service (this component)
-- **MongoDB**: Storage for log data and analysis results
-- **RabbitMQ**: Message broker for distributed processing
-- **Log Analyzer**: Go-based MapReduce analytics engine
+The gateway implements a layered architecture comprising controller, service, and repository
+components. 
 
 ## API Endpoints
 
-### Log Management
+Its RESTful interface exposes five core HTTP endpoints:
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/logs` | Get all logs (with optional filtering) |
-| GET | `/api/logs/{id}` | Get a specific log by ID |
-| DELETE | `/api/logs/{id}` | Delete a log entry |
+* GET /api/logs - Retrieves all logs
+* GET /api/logs/{id} - Accesses individual log entry by ID
+* DELETE /api/logs/{id} - Removes specific log entry from the system
+* PUT /api/logs/{id} - Updates existing log entry
+* POST /api/logs/ - Creates new log entry
 
-### Query Parameters for GET /api/logs
+## Documentation
 
-- `serverId` - Filter logs by server ID
-- `type` - Filter logs by type (e.g., "ip", "endpoint")
-- `from` - Start timestamp (in milliseconds)
-- `to` - End timestamp (in milliseconds)
-
-
-## Setup & Installation
-
-### Prerequisites
-
-- Java 11 or higher
-- Maven 3.6+
-- MongoDB instance
-- RabbitMQ instance
-
-### Building the Application
-
-```bash
-cd gateway
-./mvnw clean package
-```
-
-### Running the Application
-
-```bash
-java -jar target/log-analysis-gateway-0.0.1-SNAPSHOT.jar
-```
-
-### Docker Deployment
-
-The API Gateway can be deployed using Docker:
-
-```bash
-# From the project root
-docker build -f docker/Dockerfile.gateway -t log-analysis-gateway .
-docker run -p 8080:8080 log-analysis-gateway
-```
-
-Or use docker-compose for the entire system:
-
-```bash
-cd docker
-docker-compose up -d
-```
-
-## Configuration
-
-The application is configured via environment variables:
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| SPRING_DATA_MONGODB_HOST | MongoDB hostname | - |
-| SPRING_DATA_MONGODB_PORT | MongoDB port | - |
-| SPRING_DATA_MONGODB_DATABASE | MongoDB database name | - |
-| SPRING_DATA_MONGODB_USERNAME | MongoDB username | - |
-| SPRING_DATA_MONGODB_PASSWORD | MongoDB password | - |
-| SPRING_DATA_MONGODB_AUTHENTICATION_DATABASE | MongoDB auth database | admin |
-| SERVER_PORT | API Gateway port | 8080 |
-
-## API Documentation
-
-API documentation is available through Swagger UI at:
-
-```
-http://[host]:[port]/swagger-ui.html
-```
-
-## Development
-
-### Project Structure
-
-```
-src/
-├── main/
-│   ├── java/
-│   │   └── com/log/Linch_JG/log/analysis/
-│   │       ├── config/         # Application configuration
-│   │       ├── controller/     # REST controllers
-│   │       ├── model/          # Data models
-│   │       ├── repository/     # Database access
-│   │       ├── service/        # Business logic
-│   │       └── DistributedLogAnlysisApplication.java
-│   └── resources/
-│       └── application.properties
-└── test/
-    └── java/
-        └── com/log/Linch_JG/log/analysis/
-            └── DistributedLogAnlysisApplicationTests.java
-```
-
-### Adding New Endpoints
-
-1. Create a new controller or extend existing ones in the `controller` package
-2. Define service interfaces in the `service` package
-3. Implement services in the `service/impl` package
-4. Add model classes as needed in the `model` package
+API documentation available at: http://localhost:8080/swagger-ui/index.html
