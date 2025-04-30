@@ -5,7 +5,6 @@ import (
 	"github.com/Linch-JG/Distributed-Log-Analysis-Framework/analyzer/internal/models"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -59,7 +58,6 @@ func ParseRawLog(line string) (*models.Log, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse time: %w", err)
 		}
-
 		status, err := strconv.Atoi(statusStr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse status code: %w", err)

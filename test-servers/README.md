@@ -174,3 +174,13 @@ Service endpoints:
 - Prometheus: http://localhost:9090 (http://prometheus:9090 for Grafana Datasource)
 - RabbitMQ Management: http://localhost:15672 (guest/guest)
 - MongoDB Express: http://localhost:8082 (admin/pass)
+
+## Adding New Test Servers
+
+To add a new test server instance (e.g., test-servers-3) to increase log generation load:
+
+1. In `docker/docker-compose.yml`, duplicate an existing test-servers block, increment the container name to test-servers-3, and assign a new port (e.g., 8003:8000).
+2. Update the `PYTHON_SERVER_METRICS_URL` environment variable in both consistency-validator and performance-analyzer services to include the new server's metrics endpoint (e.g., add `,http://test-servers-3:8000/metrics`).
+3. Add the new server to the prometheus.yml targets: `- targets: ['test-servers-1:8000', 'test-servers-2:8000', 'test-servers-3:8000']`.
+4. Update any service dependencies to include the new server.
+5. Restart the environment using `docker-compose down -v && docker-compose up -d` from the docker directory.

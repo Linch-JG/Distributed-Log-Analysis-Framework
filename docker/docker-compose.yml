@@ -82,14 +82,14 @@ services:
       - backend_network
       - frontend_network
     
-  test-servers:
+  test-servers-1:
     build:
       context: ..
       dockerfile: docker/Dockerfile.test-servers
-    container_name: test-servers
+    container_name: test-servers-1
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8001:8000"
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -100,6 +100,69 @@ services:
       - BATCH_SIZE=50
       - NUM_THREADS=4
       - SERVER_PORT=8000
+      - SERVER_ID=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/metrics"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - backend_network
+      
+  test-servers-2:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.test-servers
+    container_name: test-servers-2
+    restart: unless-stopped
+    ports:
+      - "8002:8000"
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-admin}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASS:-admin}
+      - RABBITMQ_QUEUE=logs
+      - LOG_INTERVAL=0.001
+      - BATCH_SIZE=50
+      - NUM_THREADS=4
+      - SERVER_PORT=8000
+      - SERVER_ID=2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/metrics"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - backend_network
+  
+  test-servers-3:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.test-servers
+    container_name: test-servers-3
+    restart: unless-stopped
+    ports:
+      - "8003:8000"
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-admin}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASS:-admin}
+      - RABBITMQ_QUEUE=logs
+      - LOG_INTERVAL=0.001
+      - BATCH_SIZE=50
+      - NUM_THREADS=4
+      - SERVER_PORT=8000
+      - SERVER_ID=3
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/metrics"]
       interval: 10s
@@ -158,7 +221,7 @@ services:
       - MONGO_DATABASE=${MONGO_DATABASE:-logs_analysis_db}
       - MONGO_COLLECTION=logs_analysis
       - CHECK_INTERVAL=30
-      - PYTHON_SERVER_METRICS_URL=http://test-servers:8000/metrics
+      - PYTHON_SERVER_METRICS_URL=http://test-servers-1:8000/metrics,http://test-servers-2:8000/metrics,http://test-servers-3:8000/metrics
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=${RABBITMQ_USER:-admin}
@@ -174,7 +237,57 @@ services:
     volumes:
       - consistency_metrics:/metrics
     depends_on:
-      test-servers:
+      test-servers-1:
+        condition: service_healthy
+      test-servers-2:
+        condition: service_healthy
+      test-servers-3:
+        condition: service_healthy
+      analyzer:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - backend_network
+
+  performance-analyzer:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.performance-analyzer
+    container_name: performance-analyzer
+    restart: unless-stopped
+    ports:
+      - "8091:8091"
+    environment:
+      - MONGO_URI=mongodb://${MONGO_USERNAME:-admin}:${MONGO_PASSWORD:-admin}@mongodb:27017/${MONGO_DATABASE:-logs_analysis_db}?authSource=admin
+      - MONGO_DATABASE=${MONGO_DATABASE:-logs_analysis_db}
+      - MONGO_COLLECTION=logs_analysis
+      - CHECK_INTERVAL=30
+      - PYTHON_SERVER_METRICS_URL=http://test-servers-1:8000/metrics,http://test-servers-2:8000/metrics,http://test-servers-3:8000/metrics
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-admin}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASS:-admin}
+      - RABBITMQ_QUEUE=logs
+      - METRICS_PORT=8091
+      - PERFORMANCE_THRESHOLD_WARNING=500
+      - PERFORMANCE_THRESHOLD_CRITICAL=1000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8091/metrics"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    volumes:
+      - performance_metrics:/metrics
+    depends_on:
+      test-servers-1:
+        condition: service_healthy
+      test-servers-2:
+        condition: service_healthy
+      test-servers-3:
         condition: service_healthy
       analyzer:
         condition: service_healthy
@@ -226,9 +339,15 @@ services:
       retries: 5
       start_period: 15s
     depends_on:
-      test-servers:
+      test-servers-1:
+        condition: service_healthy
+      test-servers-2:
+        condition: service_healthy
+      test-servers-3:
         condition: service_healthy
       consistency-validator:
+        condition: service_healthy
+      performance-analyzer:
         condition: service_healthy
     networks:
       - backend_network
@@ -254,10 +373,11 @@ services:
   
 volumes:
   mongodb_data:
-    driver: local
   rabbitmq_data:
     driver: local
   consistency_metrics:
+    driver: local
+  performance_metrics:
     driver: local
   prometheus_data:
     driver: local
