@@ -8,7 +8,6 @@ import {
   Input,
   DatePicker, 
   Form, 
-  Select,
   Card,
   Popconfirm,
   message
@@ -25,20 +24,10 @@ import dayjs from 'dayjs';
 
 const { Title } = Typography;
 const { RangePicker } = DatePicker;
-const { Option } = Select;
-
-
-interface LogsResponse {
-  data: ILog[];
-  totalCount: number;
-}
 
 const Logs = () => {
   const [form] = Form.useForm();
-  const [queryParams, setQueryParams] = useState<LogQueryParams>({
-    page: 1,
-    pageSize: 10
-  });
+  const [queryParams, setQueryParams] = useState<LogQueryParams>({});
 
   const { refreshInterval } = useAppSelector(state => state.settings);
   const { data, isLoading, refetch } = useGetLogsQuery(queryParams);
@@ -53,19 +42,7 @@ const Logs = () => {
     return () => clearInterval(intervalId);
   }, [refreshInterval, refetch, queryParams]);
 
-  let logs: ILog[] = [];
-  let totalCount = 0;
-  
-  if (data) {
-    if (Array.isArray(data)) {
-      logs = data;
-      totalCount = data.length;
-    } else if (typeof data === 'object' && 'data' in data && 'totalCount' in data) {
-      // Handle paginated response object
-      logs = (data as LogsResponse).data;
-      totalCount = (data as LogsResponse).totalCount;
-    }
-  }
+  const logs: ILog[] = Array.isArray(data) ? data : [];
 
   const handleDelete = async (id: string) => {
     try {
@@ -78,13 +55,9 @@ const Logs = () => {
   };
 
   const handleSearch = (values: any) => {
-    const params: LogQueryParams = {
-      page: 1,
-      pageSize: 10
-    };
+    const params: LogQueryParams = {};
 
     if (values.serverId) params.serverId = values.serverId;
-    if (values.type) params.type = values.type;
     
     if (values.dateRange && values.dateRange.length === 2) {
       params.from = values.dateRange[0].toISOString();
@@ -96,10 +69,7 @@ const Logs = () => {
 
   const resetForm = () => {
     form.resetFields();
-    setQueryParams({
-      page: 1,
-      pageSize: 10
-    });
+    setQueryParams({});
   };
 
   const columns = [
@@ -120,27 +90,23 @@ const Logs = () => {
       dataIndex: 'type',
       key: 'type',
       render: (type: string) => {
-        let color = 'green';
-        if (type.toLowerCase().includes('error')) {
-          color = 'red';
-        } else if (type.toLowerCase().includes('warn')) {
-          color = 'orange';
-        } else if (type.toLowerCase().includes('critical')) {
-          color = 'purple';
-        } else if (type.toLowerCase().includes('security')) {
-          color = 'magenta';
-        } else if (type.toLowerCase().includes('audit')) {
-          color = 'cyan';
-        } else if (type.toLowerCase().includes('info')) {
+        let color = 'grey';
+        const lowerCaseType = type.toLowerCase();
+
+        if (lowerCaseType === 'ip') {
           color = 'blue';
+        } else if (lowerCaseType === 'endpoint') {
+          color = 'green';
         }
+
         return <Tag color={color}>{type.toUpperCase()}</Tag>;
       }
     },
     {
       title: 'Count',
       dataIndex: 'count',
-      key: 'count'
+      key: 'count',
+      sorter: (a: ILog, b: ILog) => a.count - b.count
     },
     {
       title: 'Value',
@@ -187,19 +153,6 @@ const Logs = () => {
             <Input placeholder="Server ID" prefix={<SearchOutlined />} />
           </Form.Item>
           
-          <Form.Item name="type">
-            <Select placeholder="Log Type" style={{ width: 150 }} allowClear>
-              <Option value="error">Error</Option>
-              <Option value="warning">Warning</Option>
-              <Option value="info">Info</Option>
-              <Option value="debug">Debug</Option>
-              <Option value="critical">Critical</Option>
-              <Option value="security">Security</Option>
-              <Option value="audit">Audit</Option>
-              <Option value="performance">Performance</Option>
-            </Select>
-          </Form.Item>
-          
           <Form.Item name="dateRange">
             <RangePicker />
           </Form.Item>
@@ -221,7 +174,7 @@ const Logs = () => {
       {logs.length > 0 && (
         <div style={{ marginBottom: 16 }}>
           <Typography.Text type="secondary">
-            Showing {logs.length} of {totalCount} records
+            {logs.length} records available
           </Typography.Text>
         </div>
       )}
@@ -232,11 +185,10 @@ const Logs = () => {
         rowKey="id"
         loading={isLoading}
         pagination={{
-          current: queryParams.page,
-          pageSize: queryParams.pageSize,
-          total: totalCount,
-          onChange: (page) => setQueryParams({ ...queryParams, page })
+          pageSize: 7,
+          showSizeChanger: false
         }}
+        sortDirections={['ascend', 'descend']}
       />
     </Space>
   );

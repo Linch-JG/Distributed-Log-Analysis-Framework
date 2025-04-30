@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Row, Col, Card, Statistic, Spin, Typography, Space } from 'antd';
 import { 
-  ExclamationCircleOutlined, 
-  ClockCircleOutlined, 
   DatabaseOutlined, 
   CloudServerOutlined 
 } from '@ant-design/icons';
@@ -14,7 +12,6 @@ const { Title } = Typography;
 
 interface LogSummary {
   totalLogs: number;
-  errorCount: number;
   serverCount: number;
   logTypes: { [key: string]: number };
   timeDistribution: { timestamp: string; count: number }[];
@@ -23,7 +20,6 @@ interface LogSummary {
 const Dashboard = () => {
   const [summary, setSummary] = useState<LogSummary>({
     totalLogs: 0,
-    errorCount: 0,
     serverCount: 0,
     logTypes: {},
     timeDistribution: []
@@ -44,7 +40,6 @@ const Dashboard = () => {
   useEffect(() => {
     if (logs) {
       // Calculate summary data
-      const errorCount = logs.filter(log => log.type.toLowerCase().includes('error')).length;
       const servers = new Set(logs.map(log => log.serverId));
       const logTypes: { [key: string]: number } = {};
       
@@ -70,7 +65,6 @@ const Dashboard = () => {
       
       setSummary({
         totalLogs: logs.length,
-        errorCount,
         serverCount: servers.size,
         logTypes,
         timeDistribution
@@ -138,7 +132,7 @@ const Dashboard = () => {
       <Title level={2}>Dashboard</Title>
       
       <Row gutter={[16, 16]}>
-        <Col span={6}>
+        <Col span={12}>
           <Card>
             <Statistic
               title="Total Logs"
@@ -147,31 +141,12 @@ const Dashboard = () => {
             />
           </Card>
         </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="Error Logs"
-              value={summary.errorCount}
-              valueStyle={{ color: '#cf1322' }}
-              prefix={<ExclamationCircleOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
+        <Col span={12}>
           <Card>
             <Statistic
               title="Servers"
               value={summary.serverCount}
               prefix={<CloudServerOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="Log Types"
-              value={Object.keys(summary.logTypes).length}
-              prefix={<ClockCircleOutlined />}
             />
           </Card>
         </Col>
