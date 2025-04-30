@@ -6,7 +6,6 @@ import {
   Typography, 
   Tag, 
   Input,
-  DatePicker, 
   Form, 
   Card,
   Popconfirm,
@@ -19,30 +18,28 @@ import {
   ReloadOutlined 
 } from '@ant-design/icons';
 import { useGetLogsQuery, useDeleteLogMutation } from '../services/LogService';
-import { ILog, LogQueryParams } from '../models/ILog';
+import { ILog } from '../models/ILog';
 import { useAppSelector } from '../hooks/redux';
 import dayjs from 'dayjs';
 
 const { Title } = Typography;
-const { RangePicker } = DatePicker;
 
 const Logs = () => {
   const [form] = Form.useForm();
-  const [queryParams, setQueryParams] = useState<LogQueryParams>({});
+  const [serverIdFilter, setServerIdFilter] = useState<string | undefined>(undefined);
   const [typeFilter, setTypeFilter] = useState<string | undefined>(undefined);
 
   const { refreshInterval } = useAppSelector(state => state.settings);
-  const { data, isLoading, refetch } = useGetLogsQuery(queryParams);
+  const { data, isLoading, refetch } = useGetLogsQuery({});
   const [deleteLog] = useDeleteLogMutation();
   
-  // Auto-refresh based on settings interval
   useEffect(() => {
     const intervalId = setInterval(() => {
       refetch();
     }, refreshInterval * 1000);
     
     return () => clearInterval(intervalId);
-  }, [refreshInterval, refetch, queryParams]);
+  }, [refreshInterval, refetch]);
 
   const logs: ILog[] = Array.isArray(data) ? data : [];
 
@@ -57,22 +54,13 @@ const Logs = () => {
   };
 
   const handleSearch = (values: any) => {
-    const params: LogQueryParams = {};
-
-    if (values.serverId) params.serverId = values.serverId;
-    setTypeFilter(values.type);
-    
-    if (values.dateRange && values.dateRange.length === 2) {
-      params.from = values.dateRange[0].toISOString();
-      params.to = values.dateRange[1].toISOString();
-    }
-
-    setQueryParams(params);
+    setServerIdFilter(values.serverId || undefined);
+    setTypeFilter(values.type || undefined);
   };
 
   const resetForm = () => {
     form.resetFields();
-    setQueryParams({});
+    setServerIdFilter(undefined);
     setTypeFilter(undefined);
   };
 
@@ -142,7 +130,12 @@ const Logs = () => {
     }
   ];
 
-  const filteredLogs = logs.filter(log => !typeFilter || log.type.toLowerCase() === typeFilter.toLowerCase());
+  const filteredLogs = logs.filter(log => {
+    const serverIdMatch = !serverIdFilter || log.serverId.toLowerCase().includes(serverIdFilter.toLowerCase());
+    const typeMatch = !typeFilter || log.type.toLowerCase() === typeFilter.toLowerCase();
+    
+    return serverIdMatch && typeMatch;
+  });
 
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
@@ -168,10 +161,6 @@ const Logs = () => {
               <Select.Option value="ip">IP</Select.Option>
               <Select.Option value="endpoint">ENDPOINT</Select.Option>
             </Select>
-          </Form.Item>
-          
-          <Form.Item name="dateRange">
-            <RangePicker />
           </Form.Item>
           
           <Form.Item>
