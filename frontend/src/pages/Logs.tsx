@@ -10,7 +10,8 @@ import {
   Form, 
   Card,
   Popconfirm,
-  message
+  message,
+  Select
 } from 'antd';
 import { 
   SearchOutlined, 
@@ -28,6 +29,7 @@ const { RangePicker } = DatePicker;
 const Logs = () => {
   const [form] = Form.useForm();
   const [queryParams, setQueryParams] = useState<LogQueryParams>({});
+  const [typeFilter, setTypeFilter] = useState<string | undefined>(undefined);
 
   const { refreshInterval } = useAppSelector(state => state.settings);
   const { data, isLoading, refetch } = useGetLogsQuery(queryParams);
@@ -58,6 +60,7 @@ const Logs = () => {
     const params: LogQueryParams = {};
 
     if (values.serverId) params.serverId = values.serverId;
+    setTypeFilter(values.type);
     
     if (values.dateRange && values.dateRange.length === 2) {
       params.from = values.dateRange[0].toISOString();
@@ -70,6 +73,7 @@ const Logs = () => {
   const resetForm = () => {
     form.resetFields();
     setQueryParams({});
+    setTypeFilter(undefined);
   };
 
   const columns = [
@@ -138,6 +142,8 @@ const Logs = () => {
     }
   ];
 
+  const filteredLogs = logs.filter(log => !typeFilter || log.type.toLowerCase() === typeFilter.toLowerCase());
+
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <Title level={2}>Logs</Title>
@@ -151,6 +157,17 @@ const Logs = () => {
         >
           <Form.Item name="serverId">
             <Input placeholder="Server ID" prefix={<SearchOutlined />} />
+          </Form.Item>
+          
+          <Form.Item name="type">
+            <Select 
+              placeholder="Select Type" 
+              allowClear
+              style={{ width: 150 }}
+            >
+              <Select.Option value="ip">IP</Select.Option>
+              <Select.Option value="endpoint">ENDPOINT</Select.Option>
+            </Select>
           </Form.Item>
           
           <Form.Item name="dateRange">
@@ -171,17 +188,17 @@ const Logs = () => {
         </Form>
       </Card>
       
-      {logs.length > 0 && (
+      {filteredLogs.length > 0 && (
         <div style={{ marginBottom: 16 }}>
           <Typography.Text type="secondary">
-            {logs.length} records available
+            {filteredLogs.length} records available
           </Typography.Text>
         </div>
       )}
       
       <Table 
         columns={columns} 
-        dataSource={logs} 
+        dataSource={filteredLogs}
         rowKey="id"
         loading={isLoading}
         pagination={{
