@@ -28,7 +28,6 @@ CONSISTENCY_THRESHOLD_LOW = float(os.getenv('CONSISTENCY_THRESHOLD_LOW', 80))
 CONSISTENCY_THRESHOLD_HIGH = float(os.getenv('CONSISTENCY_THRESHOLD_HIGH', 120))
 PROCESSING_DELAY_ALLOWANCE = int(os.getenv('PROCESSING_DELAY_ALLOWANCE', 120))
 METRICS_PORT = int(os.getenv('METRICS_PORT', 8080))
-
 GENERATED_LOGS = Gauge('logs_generated_total', 'Total number of generated logs', ['server'])
 GENERATED_LOGS_TOTAL = Gauge('logs_generated_total_combined', 'Total combined logs generated from all servers')
 PROCESSED_LOGS = Gauge('logs_processed_total', 'Total number of processed logs')
