@@ -4,7 +4,7 @@ import logging
 import json
 from pymongo import MongoClient
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime
 import pika
 from prometheus_client import start_http_server, Gauge, Counter, Histogram
 
@@ -27,7 +27,6 @@ RABBITMQ_QUEUE = os.getenv('RABBITMQ_QUEUE', 'logs')
 METRICS_PORT = int(os.getenv('METRICS_PORT', 8091))
 PERFORMANCE_THRESHOLD_WARNING = float(os.getenv('PERFORMANCE_THRESHOLD_WARNING', 500))
 PERFORMANCE_THRESHOLD_CRITICAL = float(os.getenv('PERFORMANCE_THRESHOLD_CRITICAL', 1000))
-
 PROCESSING_TIME_GAUGE = Gauge('log_processing_time_ms', 'Average log processing time in milliseconds', ['component'])
 PROCESSING_RATE = Gauge('log_processing_rate', 'Number of logs processed per second', ['component'])
 LOGS_TOTAL = Gauge('logs_processed_total_by_component', 'Total number of logs processed', ['component'])
