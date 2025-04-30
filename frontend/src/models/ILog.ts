@@ -12,6 +12,4 @@ export interface LogQueryParams {
   type?: string;
   from?: string;
   to?: string;
-  page?: number;
-  pageSize?: number;
 } 
