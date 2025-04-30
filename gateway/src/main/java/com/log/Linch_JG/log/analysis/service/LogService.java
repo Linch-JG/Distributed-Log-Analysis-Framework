@@ -6,7 +6,7 @@ import java.util.Optional;
 
 public interface LogService {
     Optional<Log> getLogById(String id);
-    List<Log> getLogs(String serverId, String type, Long from, Long to, int page, int pageSize);
+    List<Log> getLogs(String serverId, String type, Long from, Long to);
     Log saveLog(Log log);
     void deleteLog(String id);
 }
