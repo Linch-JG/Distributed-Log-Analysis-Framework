@@ -57,12 +57,29 @@ A service that monitors the entire pipeline to ensure logs are processed correct
   - `CONSISTENCY_THRESHOLD_LOW`, `CONSISTENCY_THRESHOLD_HIGH` - Thresholds for consistency alerts
   - `METRICS_PORT` - Port for Prometheus metrics
 
+### Performance Analyzer (`performance_analyzer/`)
+
+A service that analyzes and exports performance metrics for the log processing pipeline.
+
+- **Key Features**:
+  - Monitors log processing times across different components
+  - Calculates processing rates and throughput
+  - Identifies performance bottlenecks
+  - Provides real-time performance metrics for the pipeline
+  - Exports metrics to Prometheus for visualization in Grafana
+
+- **Environment Variables**:
+  - `PYTHON_SERVER_METRICS_URL` - URL to fetch generator metrics
+  - `CHECK_INTERVAL` - Time between performance checks (seconds)
+  - `METRICS_PORT` - Port for Prometheus metrics
+  - `RABBITMQ_*` - RabbitMQ connection settings for queue monitoring
+
 ### Prometheus (`prometheus/`)
 
 Time-series database for storing and querying metrics from all components.
 
 - **Configuration**:
-  - Scrapes metrics from Python Server and Consistency Validator
+  - Scrapes metrics from Python Server, Consistency Validator, and Performance Analyzer
   - Default settings: 15s scrape interval, 15s evaluation interval
   - Configured via `prometheus.yml`
 
@@ -74,9 +91,9 @@ Visualization platform for metrics stored in Prometheus.
   - Real-time log generation vs. processing rates
   - Consistency ratio gauge (ideal: 95-105%)
   - RabbitMQ queue depth monitoring
-  - Estimated processing time for queued messages
   - Consistency trends over time
-  - Error detection and visualization
+  - Performance metrics visualization
+  - Multiple dashboards for different monitoring focuses
 
 ## Metrics Overview
 
@@ -89,26 +106,37 @@ The system exposes the following key metrics:
 | `logs_processed_total` | Gauge | Total number of logs processed and stored in MongoDB |
 | `rabbitmq_queue_depth` | Gauge | Current number of messages in the RabbitMQ queue |
 | `consistency_ratio` | Gauge | Ratio between processed and generated logs (percentage) |
-| `estimated_processing_time_seconds` | Gauge | Estimated time to process all queued logs |
 | `consistency_checks_total` | Counter | Total number of consistency checks performed |
-| `consistency_errors_total` | Counter | Total number of consistency errors detected |
 | `connection_errors_total` | Counter | Total connection errors during log generation/processing |
 | `active_workers` | Gauge | Number of active worker threads in Python Server |
+| `log_processing_time_ms` | Gauge | Processing time for logs in milliseconds |
+| `log_processing_rate` | Gauge | Rate of log processing (logs/sec) |
+| `logs_processed_total_by_component` | Gauge | Logs processed by each component |
 
-## Grafana Dashboard
+## Grafana Dashboards
 
-The provided dashboard (`grafana/dashboard.json`) visualizes system performance with:
+The system includes two specialized dashboards:
+
+### 1. Log Monitoring Dashboard
+
+This dashboard (`log-monitoring-dashboard.json`) focuses on data consistency and pipeline health:
 
 1. **Logs (Generated vs Processed)**: Time-series graph showing the gap between logs generated and processed
 2. **Data Consistency Ratio**: Gauge showing processing consistency percentage
 3. **Log Counters**: Current totals for generated and processed logs
 4. **RabbitMQ Queue Depth**: Current number of messages in queue
-5. **Queue Depth Trend**: Time-series graph of queue depth over time
-6. **Estimated Queue Processing Time**: Time required to process the current queue
-7. **Consistency Ratio Trend**: Time-series graph showing consistency patterns
-8. **Consistency Errors**: Count of detected consistency problems over time
+5. **RabbitMQ Queue Depth Trend**: Time-series graph of queue depth over time
+6. **Consistency Ratio Trend**: Time-series graph showing consistency patterns
 
-The dashboard uses color-coded thresholds:
+### 2. Performance Dashboard
+
+This dashboard (`performance-dashboard.json`) focuses on system performance metrics:
+
+1. **Log Processing Time (ms)**: Time-series graph showing processing times
+2. **Processing Rate (logs/sec)**: Time-series graph of throughput
+3. **Logs Processed Distribution**: Pie chart showing log distribution by component
+
+The dashboards use color-coded thresholds:
 - Green: System functioning normally (consistency 95-105%)
 - Yellow: Warning range (consistency 80-95% or 105-120%)
 - Red: Critical issues (consistency <80% or >120%)
@@ -148,39 +176,24 @@ The Data Consistency Ratio gauge uses specific thresholds that have been careful
    - Above 120%: Serious duplication issues or fundamental measurement errors
    - Immediate investigation is necessary
 
-#### Log Counter Difference Interpretation
+#### Log Counters Interpretation
 
-The "Log Counters" panel often shows a slight difference between the "Generated" and "Processed" counts, with Generated typically higher than Processed. This is both expected and correct for several reasons:
-
-1. **Pipeline Latency**: Logs take time to flow through the system from generation to processing completion. At any given moment, some logs are in transit (in RabbitMQ or being processed).
-
-2. **Measurement Timing**: The metrics are collected at slightly different points in time due to the Prometheus scrape interval, creating small natural discrepancies.
-
-3. **Asynchronous Processing**: The log generation and processing systems operate asynchronously and independently, so perfect count alignment would actually be suspicious.
-
-A small, stable difference (typically proportional to the generation rate and system scale) indicates the system is functioning correctly. Only a growing difference over time should be cause for concern, as it indicates the processing cannot keep up with generation.
+The "Logs (Generated vs Processed)" panel shows a stepped lines of "Generated" and "Processed" counts. This is done due to a 15 seconds interval between collecting metrics to deal with the message queue storing some part of the logs before they are consumed be the analyzer. 
 
 ## Running the Environment
 
-To start the entire test environment:
-
-```bash
-cd test-servers
-docker-compose up -d
-```
-
 Service endpoints:
-- Grafana: http://localhost:3000 (admin/admin)
+- Grafana: http://localhost:3000
 - Prometheus: http://localhost:9090 (http://prometheus:9090 for Grafana Datasource)
-- RabbitMQ Management: http://localhost:15672 (guest/guest)
-- MongoDB Express: http://localhost:8082 (admin/pass)
+- RabbitMQ Management: http://localhost:15672
+- MongoDB Express: http://localhost:8081
 
 ## Adding New Test Servers
 
-To add a new test server instance (e.g., test-servers-3) to increase log generation load:
+To add a new test server instance (e.g., test-servers-4) to increase log generation load:
 
-1. In `docker/docker-compose.yml`, duplicate an existing test-servers block, increment the container name to test-servers-3, and assign a new port (e.g., 8003:8000).
-2. Update the `PYTHON_SERVER_METRICS_URL` environment variable in both consistency-validator and performance-analyzer services to include the new server's metrics endpoint (e.g., add `,http://test-servers-3:8000/metrics`).
-3. Add the new server to the prometheus.yml targets: `- targets: ['test-servers-1:8000', 'test-servers-2:8000', 'test-servers-3:8000']`.
+1. In `docker/docker-compose.yml`, duplicate an existing test-servers block, increment the container name to test-servers-4, and assign a new port (e.g., 8003:8000).
+2. Update the `PYTHON_SERVER_METRICS_URL` environment variable in both consistency-validator and performance-analyzer services to include the new server's metrics endpoint (e.g., add `,http://test-servers-4:8000/metrics`).
+3. Add the new server to the prometheus.yml targets: `- targets: ['test-servers-1:8000', 'test-servers-2:8000', 'test-servers-3:8000', 'test-servers-4:8000']`.
 4. Update any service dependencies to include the new server.
 5. Restart the environment using `docker-compose down -v && docker-compose up -d` from the docker directory.
