@@ -46,12 +46,10 @@ func main() {
 	rabbitMQQueue := getEnv("RABBITMQ_QUEUE", "logs")
 
 	mongoURI := getEnv("MONGO_URI", "mongodb://localhost:27017")
-
 	mongoDBName := getEnv("MONGO_DATABASE", "logs_analysis_db")
 	mongoCollection := getEnv("MONGO_COLLECTION", "logs_analysis")
 
 	rabbitMQURI := fmt.Sprintf("amqp://%s:%s@%s:%s/",
-
 		rabbitMQUser, rabbitMQPassword, rabbitMQHost, rabbitMQPort)
 
 	log.Printf("RabbitMQ URI: %s", rabbitMQURI)
@@ -82,27 +80,25 @@ func main() {
 	defer ch.Close()
 
 	q, err := ch.QueueDeclare(
-		rabbitMQQueue,
-
-		true,
-		false,
-		false,
-		false,
-		nil,
-
+		rabbitMQQueue, // name
+		true,          // durable
+		false,         // delete when unused
+		false,         // exclusive
+		false,         // no-wait
+		nil,           // arguments
 	)
 	if err != nil {
 		log.Fatalf("Failed to declare a queue: %v", err)
 	}
 
 	msgs, err := ch.Consume(
-		q.Name,
-		"",
-		true,
-		false,
-		false,
-		false,
-		nil,
+		q.Name, // queue
+		"",     // consumer
+		true,   // auto-ack
+		false,  // exclusive
+		false,  // no-local
+		false,  // no-wait
+		nil,    // args
 	)
 	if err != nil {
 		log.Fatalf("Failed to register a consumer: %v", err)
@@ -127,6 +123,7 @@ func main() {
 			}
 			logLine := string(msg.Body)
 			log.Printf("Received message: %s", logLine)
+
 			logEntry, err := parser.ParseRawLog(logLine)
 			if err != nil {
 				log.Printf("Error parsing log: %v", err)

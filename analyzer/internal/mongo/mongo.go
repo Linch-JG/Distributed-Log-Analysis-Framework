@@ -30,8 +30,8 @@ func NewClient(uri, dbName, collectionName string) (*Client, error) {
 		return nil, err
 	}
 
-	database := client.Database("logs_analysis_db")
-	collection := database.Collection("logs_analysis")
+	database := client.Database(dbName)
+	collection := database.Collection(collectionName)
 
 	return &Client{
 		client:     client,
@@ -68,7 +68,7 @@ func (c *Client) StoreReduceOutputs(ctx context.Context, outputs []models.Reduce
 				{Key: "value", Value: output.Value},
 				{Key: "updated_at", Value: now},
 			},
-			"$inc": bson.M{"count": output.Count},
+			"$inc":         bson.M{"count": output.Count},
 			"$setOnInsert": bson.M{"created_at": now},
 		}
 
