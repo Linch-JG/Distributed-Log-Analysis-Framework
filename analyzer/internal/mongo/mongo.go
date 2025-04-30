@@ -50,8 +50,11 @@ func (c *Client) StoreReduceOutputs(ctx context.Context, outputs []models.Reduce
 	}
 
 	operations := make([]mongo.WriteModel, 0, len(outputs))
+	now := time.Now()
 
 	for _, output := range outputs {
+		output.UpdatedAt = now
+
 		filter := bson.M{
 			"server_id": output.ServerID,
 			"type":      output.Type,
@@ -63,8 +66,10 @@ func (c *Client) StoreReduceOutputs(ctx context.Context, outputs []models.Reduce
 				{Key: "server_id", Value: output.ServerID},
 				{Key: "type", Value: output.Type},
 				{Key: "value", Value: output.Value},
+				{Key: "updated_at", Value: now},
 			},
-			"$inc": bson.M{"count": output.Count},
+			"$inc":         bson.M{"count": output.Count},
+			"$setOnInsert": bson.M{"created_at": now},
 		}
 
 		operation := mongo.NewUpdateOneModel().

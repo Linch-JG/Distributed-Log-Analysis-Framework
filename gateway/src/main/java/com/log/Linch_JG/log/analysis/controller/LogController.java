@@ -38,15 +38,8 @@ public class LogController {
                     schema = @Schema(implementation = Log.class, type = "array")))
     })
     @GetMapping
-    public ResponseEntity<List<Log>> getAllLogs(
-            @Parameter(description = "Server ID to filter logs") @RequestParam(required = false) String serverId,
-            @Parameter(description = "Log type to filter logs") @RequestParam(required = false) String type,
-            @Parameter(description = "Start timestamp (in milliseconds)") @RequestParam(required = false) Long from,
-            @Parameter(description = "End timestamp (in milliseconds)") @RequestParam(required = false) Long to,
-            @Parameter(description = "Page number (zero-based)") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Page size") @RequestParam(defaultValue = "10") int pageSize) {
-        List<Log> logs = logService.getLogs(serverId, type, from, to, page, pageSize);
-        
+    public ResponseEntity<List<Log>> getAllLogs() {
+        List<Log> logs = logService.getLogs();
         for (Log log : logs) {
             if (log.getTimestamp() == null) {
                 log.setTimestamp(new Date());
