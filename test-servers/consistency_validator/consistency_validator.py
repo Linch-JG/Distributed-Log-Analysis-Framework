@@ -29,7 +29,6 @@ CONSISTENCY_THRESHOLD_HIGH = float(os.getenv('CONSISTENCY_THRESHOLD_HIGH', 120))
 PROCESSING_DELAY_ALLOWANCE = int(os.getenv('PROCESSING_DELAY_ALLOWANCE', 120))
 METRICS_PORT = int(os.getenv('METRICS_PORT', 8080))
 
-# Update to store metrics per server
 GENERATED_LOGS = Gauge('logs_generated_total', 'Total number of generated logs', ['server'])
 GENERATED_LOGS_TOTAL = Gauge('logs_generated_total_combined', 'Total combined logs generated from all servers')
 PROCESSED_LOGS = Gauge('logs_processed_total', 'Total number of processed logs')
@@ -93,7 +92,6 @@ class ConsistencyValidator:
                             server_count = int(float(value))
                             break
                     
-                    # Extract server name from URL
                     server_name = server_url.split('//')[1].split(':')[0]
                     server_counts[server_name] = server_count
                     total_count += server_count
@@ -104,7 +102,6 @@ class ConsistencyValidator:
             except Exception as e:
                 logger.error(f"Error getting generated logs count from {server_url}: {e}")
         
-        # Установка значения общего количества сгенерированных логов
         GENERATED_LOGS_TOTAL.set(total_count)
         logger.info(f"Total logs generated across all servers: {total_count}")
         

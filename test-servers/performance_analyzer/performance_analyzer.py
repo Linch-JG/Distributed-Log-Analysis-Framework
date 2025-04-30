@@ -25,10 +25,9 @@ RABBITMQ_USER = os.getenv('RABBITMQ_USER', 'guest')
 RABBITMQ_PASSWORD = os.getenv('RABBITMQ_PASSWORD', 'guest')
 RABBITMQ_QUEUE = os.getenv('RABBITMQ_QUEUE', 'logs')
 METRICS_PORT = int(os.getenv('METRICS_PORT', 8091))
-PERFORMANCE_THRESHOLD_WARNING = float(os.getenv('PERFORMANCE_THRESHOLD_WARNING', 500))  # ms
-PERFORMANCE_THRESHOLD_CRITICAL = float(os.getenv('PERFORMANCE_THRESHOLD_CRITICAL', 1000))  # ms
+PERFORMANCE_THRESHOLD_WARNING = float(os.getenv('PERFORMANCE_THRESHOLD_WARNING', 500))
+PERFORMANCE_THRESHOLD_CRITICAL = float(os.getenv('PERFORMANCE_THRESHOLD_CRITICAL', 1000))
 
-# Prometheus metrics
 PROCESSING_TIME_GAUGE = Gauge('log_processing_time_ms', 'Average log processing time in milliseconds', ['component'])
 PROCESSING_RATE = Gauge('log_processing_rate', 'Number of logs processed per second', ['component'])
 LOGS_TOTAL = Gauge('logs_processed_total_by_component', 'Total number of logs processed', ['component'])
@@ -81,7 +80,6 @@ class PerformanceAnalyzer:
             return 0
 
     def get_server_metrics(self):
-        """Get metrics from all test servers"""
         server_metrics = {}
 
         for server_url in PYTHON_SERVER_METRICS_URLS:
@@ -98,7 +96,6 @@ class PerformanceAnalyzer:
                             except ValueError:
                                 continue
                     
-                    # Extract server name from URL
                     server_name = server_url.split('//')[1].split(':')[0]
                     server_metrics[server_name] = metrics
                     logger.info(f"Collected metrics from {server_name}")
@@ -139,28 +136,23 @@ class PerformanceAnalyzer:
         
         PERFORMANCE_CHECKS.inc()
         
-        # Обновляем метрики очереди
         if queue_depth is not None:
             QUEUE_SIZE.set(queue_depth)
         
-        # Расчет скорости обработки (если доступны исторические данные)
         if self.last_processed_count is not None and self.last_check_time is not None:
             elapsed_seconds = (current_time - self.last_check_time).total_seconds()
             if elapsed_seconds > 0:
-                # Скорость обработки
                 logs_delta = processed_count - self.last_processed_count
                 processing_rate = logs_delta / elapsed_seconds
                 PROCESSING_RATE.labels(component="analyzer").set(processing_rate)
                 logger.info(f"Processing rate: {processing_rate:.2f} logs/sec")
                 
-                # Оценка среднего времени обработки
                 if logs_delta > 0:
                     avg_processing_time_ms = (elapsed_seconds * 1000) / logs_delta
                     PROCESSING_TIME_GAUGE.labels(component="analyzer").set(avg_processing_time_ms)
                     LATENCY_HISTOGRAM.labels(component="analyzer").observe(avg_processing_time_ms)
                     logger.info(f"Average processing time: {avg_processing_time_ms:.2f} ms per log")
                     
-                    # Проверка порогов производительности
                     if avg_processing_time_ms > PERFORMANCE_THRESHOLD_CRITICAL:
                         logger.error(f"CRITICAL: Processing time ({avg_processing_time_ms:.2f} ms) exceeds critical threshold ({PERFORMANCE_THRESHOLD_CRITICAL} ms)")
                         PERFORMANCE_ERRORS.inc()
@@ -168,7 +160,6 @@ class PerformanceAnalyzer:
                         logger.warning(f"WARNING: Processing time ({avg_processing_time_ms:.2f} ms) exceeds warning threshold ({PERFORMANCE_THRESHOLD_WARNING} ms)")
                         PERFORMANCE_WARNINGS.inc()
                 
-                # Расчет скорости изменения очереди
                 if queue_depth is not None and self.last_queue_depth is not None:
                     queue_change_rate = (queue_depth - self.last_queue_depth) / elapsed_seconds
                     QUEUE_RATE.set(queue_change_rate)
@@ -177,23 +168,18 @@ class PerformanceAnalyzer:
                     else:
                         logger.info(f"Queue shrinking at rate of {abs(queue_change_rate):.2f} logs/second")
         
-        # Обновляем серверные метрики
         for server_name, metrics in server_metrics.items():
-            # Устанавливаем метрики для каждого сервера
             for metric_key, metric_value in metrics.items():
-                # Пример кастомных метрик серверов, которые нас интересуют
                 if metric_key == 'logs_generated_total':
                     LOGS_TOTAL.labels(component=f"server_{server_name}").set(metric_value)
                 elif 'processing_time' in metric_key and '_count' not in metric_key and '_sum' not in metric_key:
                     PROCESSING_TIME_GAUGE.labels(component=f"server_{server_name}").set(metric_value)
                     LATENCY_HISTOGRAM.labels(component=f"server_{server_name}").observe(metric_value)
         
-        # Сохраняем текущее состояние для следующего анализа
         self.last_processed_count = processed_count
         self.last_check_time = current_time
         self.last_queue_depth = queue_depth
         
-        # Добавляем данные для исторического анализа
         performance_point = {
             "timestamp": current_time.isoformat(),
             "processed_count": processed_count,
@@ -202,20 +188,17 @@ class PerformanceAnalyzer:
         }
         
         self.performance_history.append(performance_point)
-        if len(self.performance_history) > 60:  # Храним час данных с интервалом 1 минута
+        if len(self.performance_history) > 60:
             self.performance_history.pop(0)
         
         return performance_point
 
     def analyze_trends(self):
-        """Анализ трендов производительности за последнюю историю метрик"""
         if len(self.performance_history) < 5:
             return {"status": "insufficient_data", "message": "Недостаточно данных для анализа трендов"}
         
-        # Берем последние 5 точек для анализа краткосрочных трендов
         recent_points = self.performance_history[-5:]
         
-        # Анализ тренда скорости обработки
         processing_trend = "stable"
         if all(recent_points[i]["processed_count"] < recent_points[i+1]["processed_count"] 
               for i in range(len(recent_points)-1)):
@@ -224,7 +207,6 @@ class PerformanceAnalyzer:
                for i in range(len(recent_points)-1)):
             processing_trend = "degrading"
         
-        # Анализ тренда очереди
         queue_trend = "stable"
         if all(recent_points[i].get("queue_depth", 0) > recent_points[i+1].get("queue_depth", 0) 
               for i in range(len(recent_points)-1)):
@@ -233,7 +215,6 @@ class PerformanceAnalyzer:
                for i in range(len(recent_points)-1)):
             queue_trend = "degrading"
         
-        # Анализ общей производительности
         overall_status = "healthy"
         if queue_trend == "degrading" and processing_trend != "improving":
             overall_status = "at_risk"
@@ -253,7 +234,6 @@ class PerformanceAnalyzer:
         performance_data = self.analyze_performance()
         trends_analysis = self.analyze_trends()
         
-        # Добавляем прогнозы и рекомендации
         metrics = {
             "timestamp": datetime.now().isoformat(),
             "current": performance_data,
@@ -261,7 +241,6 @@ class PerformanceAnalyzer:
             "historical_data": self.performance_history[-10:] if len(self.performance_history) > 0 else []
         }
         
-        # Добавляем рекомендации на основе анализа
         recommendations = []
         if trends_analysis["status"] == "critical":
             recommendations.append("Критическая ситуация: рассмотрите возможность масштабирования компонента analyzer")
@@ -300,6 +279,6 @@ class PerformanceAnalyzer:
             time.sleep(CHECK_INTERVAL)
 
 if __name__ == "__main__":
-    time.sleep(10)  # Даем время другим компонентам загрузиться
+    time.sleep(10)
     analyzer = PerformanceAnalyzer()
     analyzer.run()
