@@ -18,7 +18,7 @@ MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017')
 MONGO_DATABASE = os.getenv('MONGO_DATABASE', 'logs_db')
 MONGO_COLLECTION = os.getenv('MONGO_COLLECTION', 'logs')
 CHECK_INTERVAL = int(os.getenv('CHECK_INTERVAL', 30))
-PYTHON_SERVER_METRICS_URL = os.getenv('PYTHON_SERVER_METRICS_URL', 'http://python-server:8000/metrics')
+PYTHON_SERVER_METRICS_URLS = os.getenv('PYTHON_SERVER_METRICS_URL', 'http://python-server:8000/metrics').split(',')
 RABBITMQ_HOST = os.getenv('RABBITMQ_HOST', 'rabbitmq')
 RABBITMQ_PORT = int(os.getenv('RABBITMQ_PORT', 5672))
 RABBITMQ_USER = os.getenv('RABBITMQ_USER', 'guest')
@@ -29,7 +29,9 @@ CONSISTENCY_THRESHOLD_HIGH = float(os.getenv('CONSISTENCY_THRESHOLD_HIGH', 120))
 PROCESSING_DELAY_ALLOWANCE = int(os.getenv('PROCESSING_DELAY_ALLOWANCE', 120))
 METRICS_PORT = int(os.getenv('METRICS_PORT', 8080))
 
-GENERATED_LOGS = Gauge('logs_generated_total', 'Total number of generated logs')
+# Update to store metrics per server
+GENERATED_LOGS = Gauge('logs_generated_total', 'Total number of generated logs', ['server'])
+GENERATED_LOGS_TOTAL = Gauge('logs_generated_total_combined', 'Total combined logs generated from all servers')
 PROCESSED_LOGS = Gauge('logs_processed_total', 'Total number of processed logs')
 QUEUE_DEPTH = Gauge('rabbitmq_queue_depth', 'Current RabbitMQ queue depth')
 CONSISTENCY_RATIO = Gauge('consistency_ratio', 'Ratio between processed and generated logs (percentage)')
@@ -45,7 +47,7 @@ class ConsistencyValidator:
         self.connect_to_mongodb()
         self.metrics_history = []
         self.historical_consistency = []
-        logger.info("Consistency validator initialized")
+        logger.info(f"Consistency validator initialized with server URLs: {PYTHON_SERVER_METRICS_URLS}")
 
     def connect_to_mongodb(self):
         try:
@@ -74,21 +76,39 @@ class ConsistencyValidator:
             logger.error(f"Error getting logs count from MongoDB: {e}")
             return 0
 
-    def get_generated_logs_count(self):
-        try:
-            response = requests.get(PYTHON_SERVER_METRICS_URL, timeout=5)
-            if response.status_code == 200:
-                metrics_text = response.text
-                for line in metrics_text.split('\n'):
-                    if line.startswith('logs_generated_total'):
-                        value = line.split(' ')[-1]
-                        return int(float(value))
-            
-            logger.warning(f"Failed to get metrics from Python server, status code: {response.status_code}")
-            return None
-        except Exception as e:
-            logger.error(f"Error getting generated logs count: {e}")
-            return None
+    def get_generated_logs_counts(self):
+        """Get generated logs counts from all test servers"""
+        total_count = 0
+        server_counts = {}
+
+        for server_url in PYTHON_SERVER_METRICS_URLS:
+            try:
+                response = requests.get(server_url, timeout=5)
+                if response.status_code == 200:
+                    metrics_text = response.text
+                    server_count = 0
+                    for line in metrics_text.split('\n'):
+                        if line.startswith('logs_generated_total'):
+                            value = line.split(' ')[-1]
+                            server_count = int(float(value))
+                            break
+                    
+                    # Extract server name from URL
+                    server_name = server_url.split('//')[1].split(':')[0]
+                    server_counts[server_name] = server_count
+                    total_count += server_count
+                    GENERATED_LOGS.labels(server=server_name).set(server_count)
+                    logger.info(f"Server {server_name}: {server_count} logs generated")
+                else:
+                    logger.warning(f"Failed to get metrics from {server_url}, status code: {response.status_code}")
+            except Exception as e:
+                logger.error(f"Error getting generated logs count from {server_url}: {e}")
+        
+        # Установка значения общего количества сгенерированных логов
+        GENERATED_LOGS_TOTAL.set(total_count)
+        logger.info(f"Total logs generated across all servers: {total_count}")
+        
+        return total_count, server_counts
     
     def get_queue_depth(self):
         try:
@@ -114,19 +134,17 @@ class ConsistencyValidator:
 
     def check_consistency(self):
         processed_count = self.get_logs_count_from_mongodb()
-        generated_count = self.get_generated_logs_count()
+        generated_count, server_counts = self.get_generated_logs_counts()
         queue_depth = self.get_queue_depth()
         
         PROCESSED_LOGS.set(processed_count)
-        if generated_count is not None:
-            GENERATED_LOGS.set(generated_count)
         if queue_depth is not None:
             QUEUE_DEPTH.set(queue_depth)
         
         CONSISTENCY_CHECKS.inc()
         
-        if generated_count is None:
-            logger.warning("Cannot check consistency: unable to get generated logs count")
+        if generated_count == 0:
+            logger.warning("Cannot check consistency: no logs generated yet")
             return
         
         adjusted_generated_count = generated_count
@@ -134,7 +152,7 @@ class ConsistencyValidator:
             logger.info(f"Current queue depth: {queue_depth} messages")
             adjusted_generated_count = generated_count - queue_depth
         
-        logger.info(f"Generated logs: {generated_count}, Adjusted for queue: {adjusted_generated_count}, Processed logs: {processed_count}")
+        logger.info(f"Generated logs: {generated_count} (from {len(server_counts)} servers), Adjusted for queue: {adjusted_generated_count}, Processed logs: {processed_count}")
         
         if adjusted_generated_count > 0:
             consistency_percentage = (processed_count / adjusted_generated_count) * 100
@@ -146,7 +164,8 @@ class ConsistencyValidator:
                 "adjusted_generated": adjusted_generated_count,
                 "processed": processed_count,
                 "queue_depth": queue_depth,
-                "consistency_percentage": consistency_percentage
+                "consistency_percentage": consistency_percentage,
+                "server_counts": server_counts
             })
             
             if len(self.historical_consistency) > 10:
@@ -185,7 +204,7 @@ class ConsistencyValidator:
     
     def export_consistency_metrics(self):
         processed_count = self.get_logs_count_from_mongodb()
-        generated_count = self.get_generated_logs_count() or 0
+        generated_count, server_counts = self.get_generated_logs_counts()
         queue_depth = self.get_queue_depth() or 0
         
         if len(self.historical_consistency) >= 2:
@@ -200,6 +219,7 @@ class ConsistencyValidator:
             "timestamp": datetime.now().isoformat(),
             "processed_logs_total": processed_count,
             "generated_logs_total": generated_count,
+            "server_counts": server_counts,
             "queue_depth": queue_depth,
             "consistency_ratio": processed_count / (generated_count - queue_depth) if (generated_count - queue_depth) > 0 else 0,
             "consistency_percentage": (processed_count / (generated_count - queue_depth) * 100) if (generated_count - queue_depth) > 0 else 0,
@@ -217,6 +237,7 @@ class ConsistencyValidator:
 
     def run(self):
         logger.info("Starting consistency validator")
+        logger.info(f"Monitoring {len(PYTHON_SERVER_METRICS_URLS)} test servers")
         logger.info(f"Consistency thresholds: Low={CONSISTENCY_THRESHOLD_LOW}%, High={CONSISTENCY_THRESHOLD_HIGH}%")
         logger.info(f"Processing delay allowance: {PROCESSING_DELAY_ALLOWANCE} seconds")
         

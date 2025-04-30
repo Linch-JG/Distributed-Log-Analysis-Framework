@@ -9,9 +9,14 @@ scrape_configs:
 
   - job_name: 'test-servers'
     static_configs:
-      - targets: ['test-servers:8000']
+      - targets: ['test-servers-1:8000', 'test-servers-2:8000', 'test-servers-3:8000']
       
   - job_name: 'consistency-validator'
     metrics_path: '/metrics'
     static_configs:
       - targets: ['consistency-validator:8090']
+      
+  - job_name: 'performance-analyzer'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['performance-analyzer:8091']

@@ -23,6 +23,7 @@ LOG_INTERVAL = float(os.getenv('LOG_INTERVAL', 0.001))
 BATCH_SIZE = int(os.getenv('BATCH_SIZE', 50))
 NUM_WORKERS = int(os.getenv('NUM_THREADS', 4))
 SERVER_PORT = int(os.getenv('SERVER_PORT', 8000))
+SERVER_ID = os.getenv('SERVER_ID', 'unknown')
 
 LOGS_GENERATED = Counter('logs_generated_total', 'Total number of logs generated')
 LOGS_SENT = Counter('logs_sent_total', 'Total number of logs sent to RabbitMQ')
@@ -54,7 +55,7 @@ def generate_log_entry():
     
     timestamp = datetime.datetime.now().strftime("%d/%b/%Y:%H:%M:%S +0000")
     
-    log_entry = f'{ip} - - [{timestamp}] "{method} {endpoint} HTTP/1.1" {status} {bytes_sent} "-" "{user_agent}"'
+    log_entry = f'{SERVER_ID}: {ip} - - [{timestamp}] "{method} {endpoint} HTTP/1.1" {status} {bytes_sent} "-" "{user_agent}"'
     return log_entry
 
 def generate_log_batch(size):
