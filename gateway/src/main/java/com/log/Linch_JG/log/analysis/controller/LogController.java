@@ -40,12 +40,6 @@ public class LogController {
     @GetMapping
     public ResponseEntity<List<Log>> getAllLogs() {
         List<Log> logs = logService.getLogs();
-        for (Log log : logs) {
-            if (log.getTimestamp() == null) {
-                log.setTimestamp(new Date());
-            }
-        }
-        
         return new ResponseEntity<>(logs, HttpStatus.OK);
     }
     
@@ -64,10 +58,6 @@ public class LogController {
         
         if (logOptional.isPresent()) {
             Log log = logOptional.get();
-            if (log.getTimestamp() == null) {
-                log.setTimestamp(new Date());
-                log = logService.saveLog(log); 
-            }
             return new ResponseEntity<>(log, HttpStatus.OK);
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);

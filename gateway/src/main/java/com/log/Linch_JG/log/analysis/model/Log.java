@@ -18,5 +18,6 @@ public class Log {
     private String type;
     private String value;
     private Integer count;
+    @Field("updated_at")
     private Date timestamp;
 }
