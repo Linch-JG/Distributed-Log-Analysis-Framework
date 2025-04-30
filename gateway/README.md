@@ -32,8 +32,6 @@ Client Applications → API Gateway → MongoDB
 |--------|----------|-------------|
 | GET | `/api/logs` | Get all logs (with optional filtering) |
 | GET | `/api/logs/{id}` | Get a specific log by ID |
-| POST | `/api/logs` | Create a new log entry |
-| PUT | `/api/logs/{id}` | Update an existing log entry |
 | DELETE | `/api/logs/{id}` | Delete a log entry |
 
 ### Query Parameters for GET /api/logs
@@ -43,13 +41,6 @@ Client Applications → API Gateway → MongoDB
 - `from` - Start timestamp (in milliseconds)
 - `to` - End timestamp (in milliseconds)
 
-### Analytics Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/analytics/ips` | Get most active IP addresses |
-| GET | `/api/analytics/endpoints` | Get most accessed endpoints |
-| GET | `/api/analytics/grouped` | Get analytics grouped by server |
 
 ## Setup & Installation
 
