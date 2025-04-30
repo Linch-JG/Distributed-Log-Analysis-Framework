@@ -44,12 +44,12 @@ func main() {
 	rabbitMQUser := getEnv("RABBITMQ_USER", "guest")
 	rabbitMQPassword := getEnv("RABBITMQ_PASSWORD", "guest")
 	rabbitMQQueue := getEnv("RABBITMQ_QUEUE", "logs")
-	
+
 	mongoURI := getEnv("MONGO_URI", "mongodb://localhost:27017")
-	mongoDBName := getEnv("MONGO_DATABASE", "logs_analytics")
-	mongoCollection := getEnv("MONGO_COLLECTION", "aggregated_logs")
-	
-	rabbitMQURI := fmt.Sprintf("amqp://%s:%s@%s:%s/", 
+	mongoDBName := getEnv("MONGO_DATABASE", "logs_analysis_db")
+	mongoCollection := getEnv("MONGO_COLLECTION", "logs_analysis")
+
+	rabbitMQURI := fmt.Sprintf("amqp://%s:%s@%s:%s/",
 		rabbitMQUser, rabbitMQPassword, rabbitMQHost, rabbitMQPort)
 
 	log.Printf("RabbitMQ URI: %s", rabbitMQURI)
@@ -80,7 +80,7 @@ func main() {
 	defer ch.Close()
 
 	q, err := ch.QueueDeclare(
-		rabbitMQQueue,
+		rabbitMQQueue, // name
 		true,          // durable
 		false,         // delete when unused
 		false,         // exclusive
@@ -123,9 +123,8 @@ func main() {
 			}
 			logLine := string(msg.Body)
 			log.Printf("Received message: %s", logLine)
-			serverID := "server1"
 
-			logEntry, err := parser.ParseRawLog(logLine, serverID)
+			logEntry, err := parser.ParseRawLog(logLine)
 			if err != nil {
 				log.Printf("Error parsing log: %v", err)
 				continue
